@@ -7,6 +7,7 @@ import (
 	"github.com/wendal/gor"
 	"io/ioutil"
 	"log"
+	"math"
 	"os"
 	"path"
 	"path/filepath"
@@ -29,9 +30,17 @@ func Build_index(logList map[string]LogInfo, tplDirPath string, destDirPath stri
 	var pageloglist = map[string]LogInfo{}
 	var listPage ListPage
 	var totalCount = len(logList) //总数
-	var totalPage = totalCount / pagesize
+	var totalPage = int(math.Ceil(float64(totalCount) / float64(pagesize)))
 	for k, v := range logList {
-
+		if v.Type == "article" {
+			index := strings.Index(string(v.Log.(Article)), "\n<!--more-->")
+			if index < 0 {
+				v.Log = v.Log.(Article)
+			} else {
+				v.Log = v.Log.(Article)[0:index]
+			}
+			v.Log = Article(gor.MarkdownToHtml(string(v.Log.(Article))))
+		}
 		pageloglist[k] = v
 
 		if len(pageloglist) == pagesize || len(pageloglist) == totalCount {

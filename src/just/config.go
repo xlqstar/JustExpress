@@ -14,6 +14,7 @@ func Configure(filePath string) map[string]string {
 	}
 	configMap := map[string]string{}
 	config := strings.Replace("\r\n", "\n", string(configByte), -1)
+	config = strings.Replace("|\n", "|", config, -1)
 	configArray := strings.Split(config, "\n")
 	for _, v := range configArray {
 		v = Trim(v)
@@ -28,7 +29,7 @@ func Configure(filePath string) map[string]string {
 	return configMap
 }
 
-func SetInt(key string, config map[string]string) int {
+func GetInt(key string, config map[string]string) int {
 	value, err := strconv.Atoi(config[key])
 	if err != nil {
 		log.Fatal(key + "值未填写或填写不正确，请确认为整数")
@@ -36,7 +37,7 @@ func SetInt(key string, config map[string]string) int {
 	return value
 }
 
-func SetStr(key string, config map[string]string) string {
+func GetStr(key string, config map[string]string) string {
 	if config[key] == "" {
 		log.Fatal(key + "值未填写或填写不正确")
 	}

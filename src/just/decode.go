@@ -2,17 +2,17 @@ package just
 
 import (
 	"fmt"
-	"io/ioutil"
-	"github.com/rwcarlsen/goexif/exif"
-	"log"
-	"os"
-	"path/filepath"
 	"github.com/axgle/mahonia"
+	"github.com/rwcarlsen/goexif/exif"
 	"image"
 	"image/gif"
 	"image/jpeg"
 	"image/png"
+	"io/ioutil"
+	"log"
+	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"syscall"
@@ -79,9 +79,6 @@ func decode_article(src string) LogInfo {
 	//获取summary
 	content = GetContent(content, metaDataBlock)
 
-	index := strings.Index(content, "\n<!--more-->")
-	summary := content[0:index]
-	articleInfo.Summary = summary
 	articleInfo.Src = src
 	articleInfo.Log = Article(content)
 	articleInfo.Type = "article"
@@ -108,11 +105,11 @@ func decode_album(src string) LogInfo {
 		photo_exif, err := exif.Decode(photo_fi)
 		if err != nil {
 			comment_str = ""
-		}else{
+		} else {
 			comment, err := photo_exif.Get(exif.UserComment)
 			if err != nil {
 				comment_str = ""
-			}else{
+			} else {
 				comment_str = decoder.CConvertString(comment.Val)
 			}
 		}
@@ -126,21 +123,21 @@ func decode_album(src string) LogInfo {
 		case ".jpg", ".jpeg":
 			imgInfo, err = jpeg.DecodeConfig(photo_fi)
 			if err != nil {
-				fmt.Println("图片解析错误："+fullFileName)
+				fmt.Println("图片解析错误：" + fullFileName)
 				os.Exit(0)
 			}
 
 		case ".png":
 			imgInfo, err = png.DecodeConfig(photo_fi)
 			if err != nil {
-				fmt.Println("图片解析错误："+fullFileName)
+				fmt.Println("图片解析错误：" + fullFileName)
 				os.Exit(0)
 			}
 
 		case ".gif":
 			imgInfo, err = gif.DecodeConfig(photo_fi)
 			if err != nil {
-				fmt.Println("图片解析错误："+fullFileName)
+				fmt.Println("图片解析错误：" + fullFileName)
 				os.Exit(0)
 			}
 		}
@@ -153,7 +150,7 @@ func decode_album(src string) LogInfo {
 }
 
 func getLastModTime(fi os.FileInfo) string {
-	ModTime := fi.Sys().(*syscall.Win32FileAttributeData).LastWriteTime.Nanoseconds() / (1000*1000*1000)
+	ModTime := fi.Sys().(*syscall.Win32FileAttributeData).LastWriteTime.Nanoseconds() / (1000 * 1000 * 1000)
 	ModTimeStr := fmt.Sprintf("%d", ModTime)
 	return ModTimeStr
 }

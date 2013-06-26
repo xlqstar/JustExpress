@@ -1,7 +1,7 @@
 /*
 
 --buildtarget=log/index/both
---whichlog=from/all/auto
+--which=from/all/auto
 
 几种日志创建方式：
 
@@ -28,12 +28,12 @@ import (
 var (
 	timeFormat = "2006-5-5"
 
-	whichlog    = *flag.String("whichlog", "auto", "生成模式 (from/all/auto)")
-	fromtime    = *flag.String("fromtime", "", "生成日志的起始时间 (2014-1-19)")
-	buildtarget = *flag.String("buildtarget", "both", "生成目标 (log/index/both)")
-	configFile  = *flag.String("config", "config", "配置文件")
+	which       = flag.String("which", "auto", "生成模式 (from/all/auto)")
+	fromtime    = flag.String("fromtime", "", "生成日志的起始时间 (2014-1-19)")
+	buildtarget = flag.String("buildtarget", "both", "生成目标 (log/index/both)")
+	configFile  = flag.String("config", "config", "配置文件")
 
-	// whichlog    = "all"
+	// which    = "all"
 	// fromtime    = "2014-1-19"
 	// buildtarget = "log"
 	// configFile  = "config"
@@ -52,21 +52,21 @@ func init() {
 
 	flag.Parse()
 
-	if whichlog == "from" {
-		_, err := time.Parse(timeFormat, fromtime)
+	if *which == "from" {
+		_, err := time.Parse(timeFormat, *fromtime)
 		if err != nil {
 			log.Fatal("请正确填写起始时间，如：2014-1-19")
 		}
 	}
 
-	config = just.Configure(configFile)
-	srcDirPath = just.SetStr("srcDirPath", config)
-	destDirPath = just.SetStr("destDirPath", config)
-	tplDirPath = just.SetStr("tplDirPath", config)
-	pageSize = just.SetInt("pageSize", config)
-	smallImgWidth = just.SetInt("smallImgWidth", config)
-	bigImgWidth = just.SetInt("bigImgWidth", config)
-
+	config = just.Configure(*configFile)
+	srcDirPath = just.GetStr("srcDirPath", config)
+	destDirPath = just.GetStr("destDirPath", config)
+	tplDirPath = just.GetStr("tplDirPath", config)
+	pageSize = just.GetInt("pageSize", config)
+	smallImgWidth = just.GetInt("smallImgWidth", config)
+	bigImgWidth = just.GetInt("bigImgWidth", config)
+	// tags = just.
 	check()
 
 }
@@ -79,37 +79,32 @@ func main() {
 
 	//just.filter_dir(&logDirList) //初步过滤
 
-	if buildtarget == "log" || buildtarget == "both" {
-
-		//日志生成
-		for k := range logDirList {
-			ifBuild_flag = false //置为假
-			logInfo := just.Decode_log(logDirList[k])
-			title := logInfo.Title
-			createtime := logInfo.Date
-
+	//日志生成
+	for k := range logDirList {
+		ifBuild_flag = false //置为假
+		logInfo := just.Decode_log(logDirList[k])
+		title := logInfo.Title
+		createtime := logInfo.Date
+		//处理日志
+		if *buildtarget == "log" || *buildtarget == "both" {
 			//filter log
-			if whichlog == "auto" {
+			if *which == "auto" {
 
-				//如果没有创建过
-				if _, ok := logList[title]; !ok {
-					ifBuild_flag = true
-				}
-				//如果有更新
-				if logInfo.LastModTime < logList[title].LastBuildTime {
+				//如果没有创建过 或者 如果有更新
+				if _, ok := logList[title]; !ok || logInfo.LastModTime < logList[title].LastBuildTime {
 					ifBuild_flag = true
 				}
 
-			} else if whichlog == "from" {
+			} else if *which == "from" {
 
-				from_t, _ := time.Parse(timeFormat, fromtime)
+				from_t, _ := time.Parse(timeFormat, *fromtime)
 				create_t, _ := time.Parse(timeFormat, createtime)
 
 				if create_t.After(from_t) || create_t.Equal(from_t) {
 					ifBuild_flag = true
 				}
 
-			} else if whichlog == "all" {
+			} else if *which == "all" {
 				ifBuild_flag = true
 			}
 
@@ -121,11 +116,12 @@ func main() {
 				logList[title] = logInfo
 			}
 		}
-
 	}
-	if buildtarget == "index" || buildtarget == "both" {
+
+	if *buildtarget == "index" || *buildtarget == "both" {
 		just.Build_index(logList, tplDirPath, destDirPath, pageSize)
 	}
+
 	just.Update_loglistdata(logList)
 }
 
@@ -139,6 +135,17 @@ func getLogList() map[string]just.LogInfo {
 	}
 	var logList map[string]just.LogInfo
 	json.Unmarshal(logListStr, &logList)
+	var logInfo just.LogInfo
+	for k, _ := range logList {
+		logInfo = logList[k]
+		switch logInfo.Log.(type) {
+		case string:
+			logInfo.Log = just.Article(logInfo.Log.(string))
+		case map[string]map[string]string:
+			logInfo.Log = just.Album(logInfo.Log.(map[string]map[string]string))
+		}
+		logList[k] = logInfo
+	}
 	return logList
 }
 
