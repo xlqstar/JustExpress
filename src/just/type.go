@@ -8,7 +8,6 @@ type ListPage struct {
 }
 
 type Album map[string]map[string]string
-
 type Article string
 
 type LogInfo struct {
@@ -22,4 +21,24 @@ type LogInfo struct {
 	CreateTime    string
 	Summary       string
 	Log           interface{}
+}
+
+func (logInfo LogInfo) IsArticle() bool {
+	if logInfo.Type == "article" {
+		return true
+	}
+	return false
+}
+
+//标签
+type Tag struct {
+	Href       string
+	Name       string
+	IsCategory bool
+}
+
+//友情链接
+type Link struct {
+	Name string
+	Href string
 }
