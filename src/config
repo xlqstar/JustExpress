@@ -1,0 +1,28 @@
+#日志目录
+srcDirPath:		F:\kuaipan\Projects\Just\src\bloglist
+
+#生成目录
+destDirPath:	F:\kuaipan\Projects\Just\src\bloglist_dest
+
+#模版目录
+tplDirPath:		F:\kuaipan\Projects\Just\src\template
+
+#索引页每页的条目数
+pageSize:		10
+
+#阅读页图片最大宽度
+smallImgWidth:	600
+
+#大图的最大宽度
+bigImgWidth:	1000
+
+#开放式分类
+categorys:		随记|WEB|嵌入式|about@http://www.baidu.com
+
+#标签集
+tags:			js|arduino|php
+
+#友情链接
+links:			你的眼我的心 @ http://www.baidu.com	|
+				哇哈哈的博客 @ http://log.sdf.com
+
