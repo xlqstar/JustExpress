@@ -38,7 +38,7 @@ var (
 	// buildtarget = "log"
 	// configFile  = "config"
 
-	config        map[string]string
+	config        just.Config
 	srcDirPath    string
 	destDirPath   string
 	tplDirPath    string
@@ -46,6 +46,7 @@ var (
 	pageSize      int
 	smallImgWidth int
 	bigImgWidth   int
+	categorys     []just.Category
 )
 
 func init() {
@@ -60,15 +61,13 @@ func init() {
 	}
 
 	config = just.Configure(*configFile)
-	srcDirPath = just.GetStr("srcDirPath", config)
-	destDirPath = just.GetStr("destDirPath", config)
-	tplDirPath = just.GetStr("tplDirPath", config)
-	pageSize = just.GetInt("pageSize", config)
-	smallImgWidth = just.GetInt("smallImgWidth", config)
-	bigImgWidth = just.GetInt("bigImgWidth", config)
-	// tags = just.
-	check()
-
+	srcDirPath = config.GetStr("srcDirPath")
+	destDirPath = config.GetStr("destDirPath")
+	tplDirPath = config.GetStr("tplDirPath")
+	pageSize = config.GetInt("pageSize")
+	smallImgWidth = config.GetInt("smallImgWidth")
+	bigImgWidth = config.GetInt("bigImgWidth")
+	categorys = just.GetCategorys(config.GetArray("categorys"))
 }
 
 func main() {
@@ -119,7 +118,22 @@ func main() {
 	}
 
 	if *buildtarget == "index" || *buildtarget == "both" {
+		//生成全部索引
 		just.Build_index(logList, tplDirPath, destDirPath, pageSize)
+		//按分类生成索引
+		for _, category := range categorys {
+			_logList := map[string]just.LogInfo{}
+			for _, v := range logList {
+				if v.MetaData["category"] == category.Name {
+					_logList[v.Title] = v
+				}
+			}
+
+			if len(_logList) > 0 {
+				//log.Println(category.Alias)
+				just.Build_index(_logList, tplDirPath, destDirPath+"\\"+category.Alias, pageSize)
+			}
+		}
 	}
 
 	just.Update_loglistdata(logList)

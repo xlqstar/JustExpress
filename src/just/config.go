@@ -7,12 +7,35 @@ import (
 	"strings"
 )
 
-func Configure(filePath string) map[string]string {
+type Config map[string]string
+
+func (config Config) GetInt(key string) int {
+	value, err := strconv.Atoi(config[key])
+	if err != nil {
+		log.Fatal(key + "值未填写或填写不正确，请确认为整数")
+	}
+	return value
+}
+
+func (config Config) GetStr(key string) string {
+	if config[key] == "" {
+		log.Fatal(key + "值未填写或填写不正确")
+	}
+	return config[key]
+}
+
+func (config Config) GetArray(key string) []string {
+	value := config.GetStr(key)
+	array := strings.Split(value, "|")
+	return array
+}
+
+func Configure(filePath string) Config {
 	configByte, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		log.Fatal("配置文件不存在！")
 	}
-	configMap := map[string]string{}
+	configMap := Config{}
 	config := strings.Replace("\r\n", "\n", string(configByte), -1)
 	config = strings.Replace("|\n", "|", config, -1)
 	configArray := strings.Split(config, "\n")
@@ -26,24 +49,28 @@ func Configure(filePath string) map[string]string {
 		}
 
 	}
+
 	return configMap
 }
 
-func GetInt(key string, config map[string]string) int {
-	value, err := strconv.Atoi(config[key])
-	if err != nil {
-		log.Fatal(key + "值未填写或填写不正确，请确认为整数")
-	}
-	return value
-}
+func GetCategorys(categorys []string) []Category {
+	var categorysSet []Category
 
-func GetStr(key string, config map[string]string) string {
-	if config[key] == "" {
-		log.Fatal(key + "值未填写或填写不正确")
+	for _, categoryStr := range categorys {
+		categoryArry := strings.Split(Trim(categoryStr), "@")
+		var category Category
+		name := strings.Split(Trim(categoryArry[0]), "(")
+		category.Name = Trim(name[0])
+		if len(name) > 1 {
+			category.Alias = strings.TrimSuffix(Trim(name[1]), ")")
+		} else {
+			category.Alias = category.Name
+		}
+		if len(categoryArry) > 1 {
+			category.Href = Trim(categoryArry[1])
+		}
+		categorysSet = append(categorysSet, category)
 	}
-	return config[key]
-}
 
-func Trim(s string) string {
-	return strings.Trim(s, " \t\n\r")
+	return categorysSet
 }

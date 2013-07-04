@@ -17,12 +17,11 @@ smallImgWidth:	600
 bigImgWidth:	1000
 
 #开放式分类
-categorys:		随记|WEB|嵌入式|about@http://www.baidu.com
+categorys:		随记(other)|WEB(web)|嵌入式(embed)|about@http://www.baidu.com
 
 #标签集
 tags:			js|arduino|php
 
 #友情链接
-links:			你的眼我的心 @ http://www.baidu.com	|
-				哇哈哈的博客 @ http://log.sdf.com
+links:			你的眼我的心 @ http://www.baidu.com	| 哇哈哈的博客 @ http://log.sdf.com
 
