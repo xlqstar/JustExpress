@@ -1,8 +1,8 @@
+//markdown解析函数
+
 package just
 
 import (
-	//"bytes"
-	// "github.com/knieriem/markdown"
 	//. "github.com/russross/blackfriday"
 	. "github.com/wendal/blackfriday"
 	"log"

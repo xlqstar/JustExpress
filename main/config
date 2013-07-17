@@ -5,7 +5,10 @@ srcDirPath:		F:\kuaipan\Projects\Just\src\bloglist
 destDirPath:	F:\kuaipan\Projects\Just\src\bloglist_dest
 
 #模版目录
-tplDirPath:		F:\kuaipan\Projects\Just\src\template
+template:		default
+
+#日志生成目录
+postDirPath:	post
 
 #索引页每页的条目数
 pageSize:		10

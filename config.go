@@ -1,3 +1,5 @@
+//配置文件解析函数集
+
 package just
 
 import (
@@ -40,11 +42,11 @@ func Configure(filePath string) Config {
 	config = strings.Replace("|\n", "|", config, -1)
 	configArray := strings.Split(config, "\n")
 	for _, v := range configArray {
-		v = Trim(v)
+		v = strings.TrimSpace(v)
 		vArray := strings.SplitN(v, ":", 2)
 		if len(vArray) == 2 && !strings.HasPrefix(v, "#") {
-			key := Trim(vArray[0])
-			value := Trim(vArray[1])
+			key := strings.TrimSpace(vArray[0])
+			value := strings.TrimSpace(vArray[1])
 			configMap[key] = value
 		}
 
@@ -57,20 +59,38 @@ func GetCategorys(categorys []string) []Category {
 	var categorysSet []Category
 
 	for _, categoryStr := range categorys {
-		categoryArry := strings.Split(Trim(categoryStr), "@")
+		categoryArry := strings.Split(strings.TrimSpace(categoryStr), "@")
 		var category Category
-		name := strings.Split(Trim(categoryArry[0]), "(")
-		category.Name = Trim(name[0])
+		name := strings.Split(strings.TrimSpace(categoryArry[0]), "(")
+		category.Name = strings.TrimSpace(name[0])
 		if len(name) > 1 {
-			category.Alias = strings.TrimSuffix(Trim(name[1]), ")")
+			category.Alias = strings.TrimSuffix(strings.TrimSpace(name[1]), ")")
 		} else {
 			category.Alias = category.Name
 		}
 		if len(categoryArry) > 1 {
-			category.Href = Trim(categoryArry[1])
+			category.Href = strings.TrimSpace(categoryArry[1])
 		}
 		categorysSet = append(categorysSet, category)
 	}
 
 	return categorysSet
+}
+
+func GetTags(tags []string) []Tag {
+	var tagSet []Tag
+
+	for _, tagStr := range tags {
+		var tag Tag
+		name := strings.Split(strings.TrimSpace(tagStr), "(")
+		tag.Name = strings.TrimSpace(name[0])
+		if len(name) > 1 {
+			tag.Alias = strings.TrimSuffix(strings.TrimSpace(name[1]), ")")
+		} else {
+			tag.Alias = tag.Name
+		}
+		tagSet = append(tagSet, tag)
+	}
+
+	return tagSet
 }

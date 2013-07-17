@@ -1,3 +1,5 @@
+//解析当前日志所属类型（相册型、文章型）
+
 package just
 
 import (
@@ -36,7 +38,7 @@ func is_album(fileList []string) bool {
 		ext := filepath.Ext(fileList[k])
 		ext = strings.ToLower(ext)
 		imgExtArray := [...]string{".jpg", ".jpeg", ".gif", ".bmp", ".png"}
-		if !in_array(strings.ToLower(ext), imgExtArray[0:]) {
+		if !in_array(strings.ToLower(ext), imgExtArray[0:]) && filepath.Base(fileList[k]) != "meta" {
 			return false
 		}
 	}
@@ -66,6 +68,7 @@ func in_array(v string, array []string) bool {
 }
 
 /*
+//完善版本
 func InArray(obj interface{}, slice interface{}) (bool, error) {
 	sliceValue := reflect.Indirect(reflect.ValueOf(slice))
 	objValue := reflect.Indirect(reflect.ValueOf(obj))

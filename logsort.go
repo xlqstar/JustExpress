@@ -1,19 +1,22 @@
+//日志排序操作
+
 package just
 
 import (
 	// "fmt"
+	// "log"
 	"sort"
-	"strconv"
+	// "strconv"
 )
 
 type MapSorter []Item
 
 type Item struct {
-	Key string
+	Key int
 	Val LogInfo
 }
 
-func LogSort(loglist map[string]LogInfo) map[string]LogInfo {
+func LogSort(loglist []LogInfo) []LogInfo {
 	/*	m := map[string]map[string]string{
 			"e": {"title": "你好", "date": "12334"},
 			"a": {"title": "你好", "date": "5"},
@@ -25,9 +28,10 @@ func LogSort(loglist map[string]LogInfo) map[string]LogInfo {
 	*/
 	loglist_array := NewMapSorter(loglist)
 	sort.Sort(loglist_array)
-	loglist_new := map[string]LogInfo{}
+	loglist_new := []LogInfo{}
 	for _, v := range loglist_array {
-		loglist_new[v.Key] = v.Val
+		// loglist_new[v.Key] = v.Val
+		loglist_new = append(loglist_new, v.Val)
 	}
 	/*	for _, item := range loglist {
 		fmt.Printf("%s:%d\n", item.Key, item.Val)
@@ -36,7 +40,7 @@ func LogSort(loglist map[string]LogInfo) map[string]LogInfo {
 
 }
 
-func NewMapSorter(m map[string]LogInfo) MapSorter {
+func NewMapSorter(m []LogInfo) MapSorter {
 	ms := make(MapSorter, 0, len(m))
 
 	for k, v := range m {
@@ -51,9 +55,10 @@ func (ms MapSorter) Len() int {
 }
 
 func (ms MapSorter) Less(i, j int) bool {
-	i_date_int, _ := strconv.ParseInt(ms[i].Val.Date, 10, 64)
-	j_date_int, _ := strconv.ParseInt(ms[j].Val.Date, 10, 64)
-	return i_date_int < j_date_int // 按值排序
+	/*	i_date_int, _ := strconv.ParseInt(ms[i].Val.Date, 10, 64)
+		j_date_int, _ := strconv.ParseInt(ms[j].Val.Date, 10, 64)
+		log.Fatal(i_date_int, j_date_int)*/
+	return ms[i].Val.Date < ms[j].Val.Date // 按值排序
 	// return ms[i].Val < ms[j].Val // 按值排序
 	//return ms[i].Key < ms[j].Key // 按键排序
 }
