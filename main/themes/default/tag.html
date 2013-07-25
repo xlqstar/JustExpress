@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html xml:lang="en-US" lang="en-US">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  
+  <title>标签：</title>
+  <link href='http://fonts.googleapis.com/css?family=Abel' rel='stylesheet' type='text/css'>
+
+  
+  <meta name="author" content="Lyric Wai">
+  
+  <meta name="description" content="描述">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Chrome OS 是什么"/>
+  <meta property="og:site_name" content="Lyric.im"/>
+
+  <link rel="alternate" href="/atom.xml" title="Lyric.im" type="application/atom+xml">
+  <!--[if lt IE 9]><script src="././js/html5.js"></script><![endif]-->
+  <link rel="stylesheet" href="././css/style.css" type="text/css" media="screen" /> 
+  <link rel="shortcut icon" type="image/png" href="././images/favico.ico" />
+  <script type="text/javascript" src="././js/jquery.js"></script>
+  <script type="text/javascript" src="././js/main.js"></script>
+  
+</head>
+
+
+<body>
+  <div id="header">
+    <div id="nav_wrapper">
+        <div id="nav">
+            <div class="inner">
+                <h1 id="title"><a href="/">Lyric.im</a></h1>
+                <div id="description" class="seal"></div>
+                <ul class="right">
+{{range $category, $count := .SiteInfo.CategoryStatis}}
+                    <li><a href="././{{$category.Name}}/index.html">{{$category.Name}}</a></li>
+                    <li class="dot">&bull;</a>
+{{end}}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div id="header_inner">
+        <div id="social">
+            <a href="http://twitter.com/ilrcat" target="_blank" title="Follow Me @ Twitter"><img src="././images/ic16_twitter.png"></a>
+            <a href="http://github.com/lyricat" target="_blank" title="Fork Me @ Github"><img src="././images/ic16_github.png"></a>
+            <a href="http://lyric.im/feed" target="_blank" title="Subscribe My Blog"><img src="././images/ic16_rss.png"></a>
+        </div>
+        <div id="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" class="search_box" placeholder="Search">
+    <input type="hidden" name="q" value="site:lyric.im">
+  </form>
+</div>
+        <div class="sep"></div>
+    </div>
+</div>
+
+  
+
+<div class="article">
+  <div class="inner">
+    
+  
+    <h2 class="article_title title">{{.Tag.Name}}</h2>
+  
+    <div class="text">
+    <ul>
+    {{range $key, $value := .LogList}}
+    <li><a href="#">{{$value.Title}}</a></li>
+    {{end}}
+    </ul>
+    </div>
+    <div class="big_sep"></div>
+        
+  </div> <!-- .inner -->
+</div>  <!-- .article -->
+
+
+
+  <div id="footer_wrapper">
+<div id="footer">
+    <div id="footer_inner">
+        <div class="archives col">
+            <h2>Archives</h2>
+            <ul>
+{{range $year_month, $count := .SiteInfo.ArchiveStatis}}
+                <li><a href="././archives/index.html#{{$year_month}}">{{$year_month}}</a></li>
+{{end}}
+            </ul>
+        </div>
+        <div class="tag_cloud col">
+            
+<h2>Tag Cloud</h2>
+
+{{range $tag, $count := .SiteInfo.TagStatis}}
+    <a class="tag" href="././tags/{{$tag.Alias}}.html">{{$tag.Name}}({{$count}})</a>
+{{end}}
+        </div>
+        <div class="links col">
+            <h2>Links</h2>
+            <ul>
+                <li><a href="http://hotot.org">Project Hotot</a></li>
+                <li><a href="https://github.com/lyricat">My Github repos</a></li>
+                <li><a href="http://dribbble.com/lyricat">My Dribbble</a></li>
+                <li><a href="https://twitter.com/ilrcat">My Twitter</a></li>
+            </ul>
+        </div>
+        <div class="copyright">
+            2005 - 2013
+            © Lyric Wai, All rights reserved.
+            <span>&bull;</span> 
+            Powered by <a href="http://zespia.tw/hexo/">HEXO</a>
+            <span>&bull;</span> 
+            SealScript Theme by <a href="http://lyric.im">Lyric Wai</a>
+        </div>
+    </div>
+</div>
+</div>
+
+<script>
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-4178606-8']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+  <nav id="pagination">
+    
+    
+        <a id="next" href="/" class="v_nav">
+            <span class="icon">Next</span>
+        </a>
+    
+</nav>
+</body>
+</html>

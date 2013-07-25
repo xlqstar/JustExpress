@@ -3,8 +3,10 @@
 package just
 
 import (
+	"github.com/xlqstar/Just/pinyin"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"strconv"
 	"strings"
 )
@@ -12,6 +14,7 @@ import (
 type Config map[string]string
 
 func (config Config) GetInt(key string) int {
+	key = strings.ToLower(key)
 	value, err := strconv.Atoi(config[key])
 	if err != nil {
 		log.Fatal(key + "值未填写或填写不正确，请确认为整数")
@@ -20,6 +23,7 @@ func (config Config) GetInt(key string) int {
 }
 
 func (config Config) GetStr(key string) string {
+	key = strings.ToLower(key)
 	if config[key] == "" {
 		log.Fatal(key + "值未填写或填写不正确")
 	}
@@ -27,6 +31,7 @@ func (config Config) GetStr(key string) string {
 }
 
 func (config Config) GetArray(key string) []string {
+	key = strings.ToLower(key)
 	value := config.GetStr(key)
 	array := strings.Split(value, "|")
 	return array
@@ -45,8 +50,8 @@ func Configure(filePath string) Config {
 		v = strings.TrimSpace(v)
 		vArray := strings.SplitN(v, ":", 2)
 		if len(vArray) == 2 && !strings.HasPrefix(v, "#") {
-			key := strings.TrimSpace(vArray[0])
-			value := strings.TrimSpace(vArray[1])
+			key := strings.ToLower(strings.TrimSpace(vArray[0]))
+			value := strings.TrimSpace(strings.Trim(strings.TrimSpace(vArray[1]), "|"))
 			configMap[key] = value
 		}
 
@@ -63,12 +68,16 @@ func GetCategorys(categorys []string) []Category {
 		var category Category
 		name := strings.Split(strings.TrimSpace(categoryArry[0]), "(")
 		category.Name = strings.TrimSpace(name[0])
-		if len(name) > 1 {
-			category.Alias = strings.TrimSuffix(strings.TrimSpace(name[1]), ")")
+		if len(name) > 2 {
+			log.Fatal(categoryStr + "配置格式有误(多个()符号)，请检查确认！")
+		} else if len(name) > 1 {
+			category.Alias = url.QueryEscape(pinyin.Convert(strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(name[1]), ")")), ""))
 		} else {
-			category.Alias = category.Name
+			category.Alias = url.QueryEscape(pinyin.Convert(category.Name, ""))
 		}
-		if len(categoryArry) > 1 {
+		if len(categoryArry) > 2 {
+			log.Fatal(categoryStr + "配置格式有误(多个@符号)，请检查确认")
+		} else if len(categoryArry) > 1 {
 			category.Href = strings.TrimSpace(categoryArry[1])
 		}
 		categorysSet = append(categorysSet, category)
@@ -84,13 +93,47 @@ func GetTags(tags []string) []Tag {
 		var tag Tag
 		name := strings.Split(strings.TrimSpace(tagStr), "(")
 		tag.Name = strings.TrimSpace(name[0])
-		if len(name) > 1 {
-			tag.Alias = strings.TrimSuffix(strings.TrimSpace(name[1]), ")")
+
+		if len(name) > 2 {
+			log.Fatal(tagStr + "配置格式有误(多个()符号)，请检查确认！")
+		} else if len(name) > 1 {
+			tag.Alias = url.QueryEscape(pinyin.Convert(strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(name[1]), ")")), ""))
 		} else {
-			tag.Alias = tag.Name
+			tag.Alias = url.QueryEscape(pinyin.Convert(tag.Name, ""))
 		}
 		tagSet = append(tagSet, tag)
 	}
 
 	return tagSet
+}
+
+func GetLinks(links []string) []Link {
+	var linkSet []Link
+	for _, linkStr := range links {
+		var link Link
+		linkArry := strings.SplitN(strings.TrimSpace(linkStr), "@", 2)
+		link.Name = strings.TrimSpace(linkArry[0])
+
+		if len(linkArry) < 2 {
+			log.Fatal(linkStr + "友情连接配置不完整，可能未配置相应连接！")
+		} else {
+			link.Href = strings.TrimSpace(linkArry[1])
+		}
+		linkSet = append(linkSet, link)
+	}
+
+	return linkSet
+}
+
+func GetSocials(socials []string) map[string]string {
+	socialSet := map[string]string{}
+	for _, socialStr := range socials {
+		socialArry := strings.SplitN(strings.TrimSpace(socialStr), "@", 2)
+		if len(socialArry) != 2 {
+			log.Fatal(socialStr + "友情连接配置不完整，可能未配置相应连接！")
+		}
+		socialSet[strings.ToLower(strings.TrimSpace(socialArry[0]))] = strings.TrimSpace(socialArry[1])
+	}
+
+	return socialSet
 }

@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"github.com/axgle/mahonia"
 	"github.com/rwcarlsen/goexif/exif"
+	"github.com/xlqstar/Just/pinyin"
 	"image"
 	"image/gif"
 	"image/jpeg"
 	"image/png"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -22,7 +24,7 @@ import (
 )
 
 //解析日志信息
-func Decode_log(src string) LogInfo { //decode_log
+func Decode_log(src string, siteInfo SiteInfo) LogInfo { //decode_log
 
 	logType := Parse_logType(src)
 
@@ -54,11 +56,27 @@ func Decode_log(src string) LogInfo { //decode_log
 			log.Println(err)
 			log.Fatal("日志日期填写格式错误，请参照2006-1-2这样的格式，无前导!")
 		}
-		logInfo.Date = int(t.Unix())
+		logInfo.Date = TimeStamp(t.Unix())
 	} else {
 		log.Fatal(fileName + "日志文件名不合法，请修改后再build")
 	}
 
+	if logInfo.MetaData["alias"] == "" {
+		logInfo.Permalink = url.QueryEscape(pinyin.Convert(logInfo.Title, "-"))
+	} else {
+		logInfo.Permalink = logInfo.MetaData["alias"]
+	}
+
+	for _, category := range siteInfo.Categorys {
+		if strings.Contains(logInfo.MetaData["category"], category.Name) {
+			logInfo.Categorys = append(logInfo.Categorys, category)
+		}
+	}
+	for _, tag := range siteInfo.Tags {
+		if strings.Contains(logInfo.MetaData["tag"], tag.Name) {
+			logInfo.Tags = append(logInfo.Tags, tag)
+		}
+	}
 	return logInfo
 }
 
@@ -71,7 +89,7 @@ func decode_article(src string) LogInfo {
 
 	//获取最新修改时间
 	fileInfo, _ := os.Stat(src)
-	articleInfo.LastModTime = getLastModTime(fileInfo)
+	articleInfo.LastModTime = TimeStamp(getLastModTime(fileInfo))
 	if fileInfo.IsDir() {
 		src = src + "\\article.md"
 	}
@@ -88,7 +106,7 @@ func decode_article(src string) LogInfo {
 func decode_album(src string) LogInfo {
 	var albumInfo LogInfo
 	fileInfo, _ := os.Stat(src)
-	albumInfo.LastModTime = getLastModTime(fileInfo)
+	albumInfo.LastModTime = TimeStamp(getLastModTime(fileInfo))
 
 	//获取元数据
 	file, err := ioutil.ReadFile(src + "\\meta")
@@ -104,18 +122,19 @@ func decode_album(src string) LogInfo {
 	return albumInfo
 }
 
-func getLastModTime(fi os.FileInfo) int {
+func getLastModTime(fi os.FileInfo) int64 {
 	ModTime := fi.Sys().(*syscall.Win32FileAttributeData).LastWriteTime.Nanoseconds() / (1000 * 1000 * 1000)
 	// ModTimeStr := fmt.Sprintf("%d", ModTime)
-	return int(ModTime)
+	return ModTime
 }
 
-func GetCreationTime(fi os.FileInfo) int {
+func GetCreationTime(fi os.FileInfo) int64 {
 	CreationTime := fi.Sys().(*syscall.Win32FileAttributeData).CreationTime.Nanoseconds() / (1000 * 1000 * 1000)
 	// CreationTimeStr := fmt.Sprintf("%d", CreationTime)
-	return int(CreationTime)
+	return CreationTime
 }
 
+//global var : SiteInfo
 func _decode_album(src string) (Album, Album) {
 	photoList, _ := filepath.Glob(src + "\\*")
 	var album Album
@@ -176,8 +195,16 @@ func _decode_album(src string) (Album, Album) {
 		}
 		photo_fi.Close()
 
+		var originPhotoFileName, photoFileName string
+		photoFileName = filepath.Base(fullFileName)
+		if strings.ToLower(path.Ext(fullFileName)) == ".gif" || imgInfo.Width < siteInfo.ImgWidth { //global var : SiteInfo
+			originPhotoFileName = photoFileName
+		} else {
+			originPhotoFileName = "origin_" + photoFileName
+		}
+
 		//追加图片信息
-		photo := map[string]string{"src": fullFileName, "comment": comment_str, "width": fmt.Sprintf("%d", imgInfo.Width), "height": fmt.Sprintf("%d", imgInfo.Height)}
+		var photo = Photo{Src: fullFileName, Comment: comment_str, Width: imgInfo.Width, Height: imgInfo.Height, PhotoFileName: photoFileName, OriginPhotoFileName: originPhotoFileName}
 		album = append(album, photo)
 		if strings.HasPrefix(filepath.Base(fullFileName), "*") {
 			albumSummary = append(albumSummary, photo)

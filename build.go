@@ -8,14 +8,13 @@ import (
 	"fmt"
 	"github.com/wendal/gor"
 	"io/ioutil"
-	"just/pinyin"
 	"log"
 	"math"
-	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"text/template"
@@ -23,7 +22,7 @@ import (
 
 //生成日志列表数据
 func build_loglistdata(destDirPath string, loglist []LogInfo) {
-	logList_json, _ := json.Marshal(loglist)
+	logList_json, _ := json.MarshalIndent(loglist, "", "\t")
 	ioutil.WriteFile(destDirPath+"\\loglist.json", logList_json, os.ModePerm)
 }
 
@@ -31,29 +30,28 @@ func build_loglistdata(destDirPath string, loglist []LogInfo) {
 func Build_index(indexPage IndexPage, tplDirPath string, destDirPath string) {
 
 	pagesize := indexPage.PageSize
-	// fmt.Println(indexPage.LogList)
 	//索引处理
-	indexPage.LogList = LogSort(indexPage.LogList)
 	var page = 1
 	var _logList = []LogInfo{}
 	var totalCount = len(indexPage.LogList) //总数
 	var totalPage = int(math.Ceil(float64(totalCount) / float64(pagesize)))
+	indexPage.TotalPage = Page(totalPage)
 	for _, v := range indexPage.LogList {
 		_logList = append(_logList, v)
 
 		if len(_logList) == pagesize || len(_logList) == totalCount {
 			indexPage.LogList = _logList
-			indexPage.Page = page
+			indexPage.Page = Page(page)
 			if page == totalPage {
-				indexPage.NextPage = 0
+				indexPage.NextPage = Page(1)
 			} else {
-				indexPage.NextPage = page + 1
+				indexPage.NextPage = Page(page + 1)
 			}
 
 			if page == 1 {
-				indexPage.PrevPage = 0
+				indexPage.PrevPage = Page(totalPage)
 			} else {
-				indexPage.PrevPage = page - 1
+				indexPage.PrevPage = Page(page - 1)
 			}
 
 			build_index_page(indexPage, tplDirPath, destDirPath)
@@ -83,125 +81,165 @@ func build_index_page(indexPage IndexPage, tplDirPath string, destDirPath string
 
 	page := ""
 	if indexPage.Page > 1 {
-		page = "_" + strconv.Itoa(indexPage.Page)
+		page = "_" + strconv.Itoa(int(indexPage.Page))
 	}
-	relDirPath := ""
-	dest_filename := ""
-	if indexPage.Category.Alias != "index" {
-		relDirPath = "../"
-	}
-	dest_filename = destDirPath + "\\index" + page + ".html"
-	indexPage.RelPath = relDirPath
+
+	dest_filename := destDirPath + "\\index" + page + ".html"
 	makeHTML(&indexPage, dest_filename, tplDirPath+"\\index.html")
-	log.Println(dest_filename + " 成功生成！")
+	log.Println(ConvertPath(dest_filename) + " 成功生成！")
 }
 
-func Build_log(logPage LogPage, tplDirPath string, destDirPath string, smallImgWidth uint, bigImgWidth uint) {
+func Build_log(logPage LogPage, tplDirPath string, destDirPath string, onlyRebuildHtml bool) {
 	var destLogDir string
-	if logPage.LogInfo.MetaData["alias"] == "" {
-		destLogDir = destDirPath + "\\" + url.QueryEscape(pinyin.Convert(logPage.LogInfo.Title))
-	} else {
-		destLogDir = destDirPath + "\\" + url.QueryEscape(logPage.LogInfo.MetaData["alias"])
-	}
+	destLogDir = destDirPath + "\\" + logPage.LogInfo.Permalink
 
-	err := os.Mkdir(destLogDir, os.ModePerm)
-	if os.IsExist(err) {
-		os.RemoveAll(destLogDir)
-		err = os.Mkdir(destLogDir, os.ModePerm)
-		if err != nil {
-			log.Fatal("重建" + destLogDir + "目录发生未预料到的错误")
+	if !onlyRebuildHtml {
+		err := os.Mkdir(destLogDir, os.ModePerm)
+		if os.IsExist(err) {
+			os.RemoveAll(destLogDir)
+			err = os.Mkdir(destLogDir, os.ModePerm)
+			if err != nil {
+				log.Fatal("重建" + destLogDir + "目录发生未预料到的错误，可能正有其他进程占用该目录。")
+			}
 		}
 	}
 
 	if logPage.LogInfo.Type == "article" { //文章
-
-		build_article(logPage, tplDirPath, destLogDir)
-
+		build_article(logPage, tplDirPath, destLogDir, onlyRebuildHtml)
 	} else if logPage.LogInfo.Type == "album" { //相册
-
-		build_album(logPage, tplDirPath, destLogDir, smallImgWidth, bigImgWidth)
-
+		build_album(logPage, tplDirPath, destLogDir, onlyRebuildHtml)
 	}
 
 	log.Println("《" + logPage.LogInfo.Title + "》成功生成！")
-
 }
 
-func build_album(logPage LogPage, tplDirPath string, destLogDir string, smallImgWidth uint, bigImgWidth uint) {
+func build_album(logPage LogPage, tplDirPath string, destLogDir string, onlyRebuildHtml bool) {
 	destAlbumDir := destLogDir
-	if logPage.LogInfo.Log == nil {
-		log.Println("logPage.LogInfo.Log.(Album)为nil")
-		return
-	}
+	smallImgWidth := logPage.SiteInfo.ImgWidth
+	bigImgWidth := logPage.SiteInfo.OriginImgWidth
 
-	for _, v := range logPage.LogInfo.Log.(Album) {
-		srcPhotoFullFileName := v["src"]
-		destPhotoFullFileName := strings.Replace(srcPhotoFullFileName, logPage.LogInfo.Src, destAlbumDir, -1)
-		photoFileName := filepath.Base(srcPhotoFullFileName)
-		photoWidth, _ := strconv.Atoi(v["width"])
-		smallPhotoFileName, bigPhotoFileName := "", ""
-		if strings.HasPrefix(photoFileName, "~") || strings.ToLower(path.Ext(photoFileName)) == ".gif" {
-			smallPhotoFileName, bigPhotoFileName = destPhotoFullFileName, destPhotoFullFileName
-			CopyFile(srcPhotoFullFileName, destPhotoFullFileName)
-		} else if uint(photoWidth) > bigImgWidth {
-			smallPhotoFileName, bigPhotoFileName = strings.Replace(destPhotoFullFileName, photoFileName, "small_"+photoFileName, -1), strings.Replace(destPhotoFullFileName, photoFileName, "big_"+photoFileName, -1)
-			Resize(srcPhotoFullFileName, smallPhotoFileName, smallImgWidth)
-			Resize(srcPhotoFullFileName, bigPhotoFileName, bigImgWidth)
-		} else if uint(photoWidth) > smallImgWidth {
-			smallPhotoFileName, bigPhotoFileName = strings.Replace(destPhotoFullFileName, photoFileName, "small_"+photoFileName, -1), destPhotoFullFileName
-			Resize(srcPhotoFullFileName, smallPhotoFileName, smallImgWidth)
-		} else {
-			smallPhotoFileName, bigPhotoFileName = destPhotoFullFileName, destPhotoFullFileName
-			CopyFile(srcPhotoFullFileName, destPhotoFullFileName)
-		}
-		v["smallPhotoFileName"] = filepath.Base(smallPhotoFileName)
-		v["bigPhotoFileName"] = filepath.Base(bigPhotoFileName)
-	}
 	logPage.LogInfo.Log, _ = _decode_album(logPage.LogInfo.Src)
+	for k, photo := range logPage.LogInfo.Log.(Album) {
+		srcPhotoFullFileName := photo.Src
+		destPhotoFullFileName := strings.Replace(srcPhotoFullFileName, logPage.LogInfo.Src, destAlbumDir, -1)
+		photoFileName := photo.PhotoFileName
+		photoWidth := photo.Width
+		var originPhotoFullFileName string
+		if strings.ToLower(path.Ext(photoFileName)) == ".gif" || photoWidth < smallImgWidth {
+			originPhotoFullFileName = destPhotoFullFileName
+			if !onlyRebuildHtml {
+				CopyFile(srcPhotoFullFileName, destPhotoFullFileName)
+			}
+		} else if photoWidth > bigImgWidth {
+			originPhotoFullFileName = strings.Replace(destPhotoFullFileName, photoFileName, "origin_"+photoFileName, -1)
+			if !onlyRebuildHtml {
+				Resize(srcPhotoFullFileName, destPhotoFullFileName, uint(smallImgWidth))
+				if siteInfo.OriginImgWidth > 0 {
+					Resize(srcPhotoFullFileName, originPhotoFullFileName, uint(bigImgWidth))
+				}
+			}
+		} else if photoWidth > smallImgWidth {
+			originPhotoFullFileName = strings.Replace(destPhotoFullFileName, photoFileName, "origin_"+photoFileName, -1)
+			if !onlyRebuildHtml {
+				Resize(srcPhotoFullFileName, destPhotoFullFileName, uint(smallImgWidth))
+				CopyFile(srcPhotoFullFileName, originPhotoFullFileName)
+			}
+		}
+
+		photo.OriginPhotoFileName = filepath.Base(originPhotoFullFileName)
+		logPage.LogInfo.Log.(Album)[k] = photo
+	}
 	makeHTML(&logPage, destAlbumDir+"\\index.html", tplDirPath+"\\album.html")
 }
 
-func build_article(logPage LogPage, tplDirPath string, destLogDir string) {
+//global var : onlyRebuildHtml
+func build_article(logPage LogPage, tplDirPath string, destLogDir string, onlyRebuildHtml bool) {
 	destArticleDir := destLogDir
-	if filepath.Base(logPage.LogInfo.Src) == "article.md" {
-		srcArticleDir := filepath.Dir(logPage.LogInfo.Src)
-		CopyDir(srcArticleDir, destArticleDir)
-	} else {
-		if _, err := os.Stat(destArticleDir); os.IsNotExist(err) {
-			os.Mkdir(destArticleDir, os.ModePerm)
+	if !onlyRebuildHtml {
+		if filepath.Base(logPage.LogInfo.Src) == "article.md" {
+			srcArticleDir := filepath.Dir(logPage.LogInfo.Src)
+			CopyDir(srcArticleDir, destArticleDir)
+		} else {
+			if _, err := os.Stat(destArticleDir); os.IsNotExist(err) {
+				os.Mkdir(destArticleDir, os.ModePerm)
+			}
+			CopyFile(logPage.LogInfo.Src, destArticleDir+"\\article.md")
 		}
-		CopyFile(logPage.LogInfo.Src, destArticleDir+"\\article.md")
 	}
 	content, _, _ := _decode_article(logPage.LogInfo.Src)
 	logPage.LogInfo.Log = gor.MarkdownToHtml(string(content))
 	makeHTML(&logPage, destArticleDir+"\\index.html", tplDirPath+"\\article.html")
 }
 
-func Build_tagpage(tagPage TagPage, tplDirPath string, destDirPath string) {
-	destTagDir := destDirPath + "\\tag"
+func Build_tagpage(tagPage TagPage, tplDirPath string, destTagDir string) {
 	makeHTML(&tagPage, destTagDir+"\\"+tagPage.Tag.Alias+".html", tplDirPath+"\\tag.html")
+	log.Println(ConvertPath(destTagDir+"\\"+tagPage.Tag.Alias+".html") + " 标签页生成")
 }
 
-func Build_archive(archivePage ArchivePage, tplDirPath string, destDirPath string) {
-	destArchiveDir := destDirPath + "\\archive"
+func Build_archive(archivePage ArchivePage, tplDirPath string, destArchiveDir string) {
 	makeHTML(&archivePage, destArchiveDir+"\\index.html", tplDirPath+"\\archive.html")
+	log.Println(ConvertPath(destArchiveDir+"\\index.html") + " 归档页生成")
 }
 
+/*#先渲染负载小 后replace负载大
+renderTpl
+replaceGlobalTlp
+replaceRelPath
+
+#先替换global渲染负载大 后replace，负载大
+replaceGlobalTlp
+renderTpl
+replaceRelPath
+
+#这种先替换relPath负载小 先替换global渲染负载大
+replaceGlobalTlp
+replaceRelPath
+renderTpl*/
 func makeHTML(data interface{}, dest string, templatePath string) {
 
 	template_byte, err := ioutil.ReadFile(templatePath)
 	if err != nil {
 		log.Fatal(templatePath + "模版文件读取失败，请检查该模版是否存在？")
 	}
-	template_str := strings.Replace(string(template_byte), "././././", reflect.ValueOf(data).Elem().FieldByName("RelPath").String(), -1)
+
+	relPath := reflect.ValueOf(data).Elem().FieldByName("RelPath").String()
+
+	html := replaceGlobalTlp(string(template_byte))
+	html = replaceRelPath(html, relPath)
+	html_bytes := renderTpl(data, html, strings.TrimSuffix(filepath.Base(templatePath), filepath.Ext(templatePath)))
+
+	ioutil.WriteFile(dest, html_bytes, os.ModePerm)
+}
+
+func renderTpl(data interface{}, template_str string, tplName string) []byte {
 	out := bytes.NewBuffer([]byte{})
-	tplName := strings.Replace(filepath.Base(templatePath), path.Ext(templatePath), "", -1)
-	t, _ := template.New(tplName).Parse(template_str)
-	if err := t.Execute(out, data); err != nil {
+	tpl := template.New(tplName)
+	tpl.Funcs(template.FuncMap{"first": first, "last": last, "eq": eq, "neq": neq, "not": not, "add": add, "minus": minus})
+	tpl.Parse(template_str)
+	if err := tpl.Execute(out, data); err != nil {
 		fmt.Println(err)
 	}
-	html := out.Bytes()
-	ioutil.WriteFile(dest, html, os.ModePerm)
+	return out.Bytes()
+}
+
+func replaceRelPath(content string, relPath string) string {
+	//主题路径处理
+	content = strings.Replace(content, "././js/", relPath+"style/js/", -1)
+	content = strings.Replace(content, "././css/", relPath+"style/css/", -1)
+	content = strings.Replace(content, "././images/", relPath+"style/images/", -1)
+
+	content = strings.Replace(content, "././", relPath, -1)
+	return content
+}
+
+//全局变量: siteInfo
+//替换全局布局模版
+func replaceGlobalTlp(content string) string {
+	for tplName, tpl := range siteInfo.GlobalTpl {
+		reg, _ := regexp.Compile(`<!--` + tplName + `-->[\s\S]*<!--//` + tplName + `-->`)
+		content = reg.ReplaceAllString(content, "<!--"+tplName+"-->"+tpl+"<!--//"+tplName+"-->")
+	}
+	return content
 }
 
 /*

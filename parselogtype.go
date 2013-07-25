@@ -19,15 +19,14 @@ func Parse_logType(dir string) string {
 	srcDir := dir + "\\*"
 	fileList, _ := filepath.Glob(srcDir)
 
-	if is_album(fileList) {
+	if len(fileList) == 0 {
+		return "unknow logtype"
+	} else if is_album(fileList) {
 		return "album"
-		// fmt.Println("is album")
 	} else if is_article(fileList) {
 		return "article"
-		//fmt.Println("is article")
 	} else {
 		return "unknow logtype"
-		// fmt.Println("unknow logtype")
 	}
 
 }
@@ -38,7 +37,7 @@ func is_album(fileList []string) bool {
 		ext := filepath.Ext(fileList[k])
 		ext = strings.ToLower(ext)
 		imgExtArray := [...]string{".jpg", ".jpeg", ".gif", ".bmp", ".png"}
-		if !in_array(strings.ToLower(ext), imgExtArray[0:]) && filepath.Base(fileList[k]) != "meta" {
+		if !In_array(strings.ToLower(ext), imgExtArray[0:]) && filepath.Base(fileList[k]) != "meta" {
 			return false
 		}
 	}
@@ -51,14 +50,14 @@ func is_article(fileList []string) bool {
 		ext := filepath.Ext(fileList[k])
 		ext = strings.ToLower(ext)
 		imgExtArray := [...]string{".md", ".markdown", ".html", ".htm"}
-		if in_array(strings.ToLower(ext), imgExtArray[0:]) {
+		if In_array(strings.ToLower(ext), imgExtArray[0:]) {
 			return true
 		}
 	}
 	return false
 }
 
-func in_array(v string, array []string) bool {
+func In_array(v string, array []string) bool {
 	for k := range array {
 		if array[k] == v {
 			return true

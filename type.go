@@ -3,16 +3,27 @@
 package just
 
 import (
-	"just/pinyin"
+	"strconv"
+	"time"
 )
 
+//图片
+type Photo struct {
+	Src                 string
+	PhotoFileName       string
+	OriginPhotoFileName string
+	Comment             string
+	Width               int
+	Height              int
+}
+
 //相册
-type Album []map[string]string
+type Album []Photo
 
 //文章
 type Article string
 
-//标签
+//分类
 type Category struct {
 	Name  string
 	Href  string
@@ -32,24 +43,65 @@ type Link struct {
 	Href string
 }
 
+//存档
+type Archive struct {
+	YearMonth string
+	LogList   LogList
+}
+
+type CategoryStatis struct {
+	Name  string
+	Alias string
+	Count int
+}
+
+type TagStatis struct {
+	Name  string
+	Alias string
+	Count int
+}
+
+//统计对象
+type ArchiveStatis struct {
+	YearMonth string
+	Count     int
+}
+
 type LogInfo struct {
 	Title       string
-	Date        int
+	Date        TimeStamp
+	Tags        []Tag
+	Categorys   []Category
+	Permalink   string
 	MetaData    map[string]string
 	Src         string
 	Type        string
-	LastModTime int
+	LastModTime TimeStamp
 	// CreateTime  string
 	Summary interface{}
 	Log     interface{}
 }
 
 type SiteInfo struct {
-	Categorys []Category
-	Links     []Link
-	Tags      []Tag
-	Email     string
-	Author    string
+	Site           string
+	SitePath       string
+	Domain         string
+	Categorys      []Category
+	Links          []Link
+	Tags           []Tag
+	TagStatis      []TagStatis
+	CategoryStatis []CategoryStatis
+	ArchiveStatis  []ArchiveStatis
+	Email          string
+	Author         string
+	Socials        map[string]string
+	PageSize       int
+
+	ImgWidth       int
+	OriginImgWidth int
+	ThemeName      string
+
+	GlobalTpl map[string]string
 }
 
 type IndexPage struct {
@@ -57,17 +109,20 @@ type IndexPage struct {
 	RelPath  string
 	SiteInfo SiteInfo
 
-	Page     int
-	LogList  []LogInfo
-	NextPage int
-	PrevPage int
-	PageSize int
+	Page      Page
+	LogList   []LogInfo
+	NextPage  Page
+	PrevPage  Page
+	TotalPage Page
+	PageSize  int
 }
 
 type LogPage struct {
 	RelPath  string
 	LogInfo  LogInfo
 	SiteInfo SiteInfo
+	NextLog  LogInfo
+	PrevLog  LogInfo
 }
 
 type TagPage struct {
@@ -80,7 +135,7 @@ type TagPage struct {
 type ArchivePage struct {
 	RelPath  string
 	SiteInfo SiteInfo
-	Archives map[string]LogList
+	Archives []Archive
 }
 
 //索引模版中需要
@@ -93,11 +148,43 @@ func (logInfo LogInfo) IsArticle() bool {
 
 type LogList []LogInfo
 
-func (logList *LogList) Contain(title string) bool {
+func (logList *LogList) Contain(permalink string) bool {
 	for _, v := range *logList {
-		if pinyin.Convert(v.Title) == title {
+		if v.Permalink == permalink {
 			return true
 		}
 	}
 	return false
+}
+
+type TimeStamp int64
+
+func (timeStamp TimeStamp) Format(layout string) string {
+	t := time.Unix(int64(timeStamp), 0)
+	return t.Format(layout)
+}
+
+/*func (timeStamp TimeStamp) MarshalJSON() ([]byte, error) {
+	return []byte(strconv.Quote(time.Time(t).Format(time.RFC3339))), nil
+}
+*/
+
+//页码
+type Page int
+
+func (page Page) PageName() string {
+	pageInt := int(page)
+	if pageInt == 1 {
+		return "index"
+	}
+	return "index_" + strconv.Itoa(pageInt)
+}
+
+func (page Page) PageList() []Page {
+	var pageList []Page
+	pageInt := int(page)
+	for i := 1; i <= pageInt; i++ {
+		pageList = append(pageList, Page(i))
+	}
+	return pageList
 }

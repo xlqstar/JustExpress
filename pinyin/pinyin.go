@@ -21,7 +21,7 @@ func Code(s string) int {
 }
 
 // convert chinese to pinyin
-func Convert(s string) string {
+func Convert(s string, sep string) string {
 	pyString := ""
 	var str string
 	var code int
@@ -33,7 +33,7 @@ func Convert(s string) string {
 			code = Code(str)
 			if !(code > 0 && code < 160) {
 				if flag > 0 {
-					pyString += "-"
+					pyString += sep
 				}
 
 				if v, ok := tableMap[code]; ok { //map by table
@@ -55,7 +55,7 @@ func Convert(s string) string {
 			ascii := int(rune)
 			if (ascii >= 48 && ascii <= 57) || (ascii >= 65 && ascii <= 90) || (ascii >= 97 && ascii <= 122) {
 				if flag == 2 {
-					pyString += "-"
+					pyString += sep
 				}
 				pyString += str
 				flag = 1
@@ -63,6 +63,5 @@ func Convert(s string) string {
 
 		}
 	}
-
 	return strings.ToLower(pyString)
 }
