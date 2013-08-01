@@ -23,7 +23,6 @@ func Complie(siteDirPath string, onlyRebuildHtml bool) {
 	var archiveDirPath = compliedDirPath + "\\archives"
 	var tagDirPath = compliedDirPath + "\\tags"
 	// var indexDirPath = compliedDirPath
-
 	siteCfg := Configure(compliedDirPath + "\\setting")
 	themeCfg := Configure(themeDirPath + "\\meta")
 
@@ -79,6 +78,10 @@ func Complie(siteDirPath string, onlyRebuildHtml bool) {
 
 	//若无改动则直接返回
 	if len(updatedLogList) == 0 && len(oldLogList) == 0 {
+		//清理生成日志目录（删除未预料到的文件或者已经删除、改名的日志）
+		cleanDestPostDir(postDirPath, oldLogList)
+		//复制主题
+		SyncTheme(themeDirPath, siteInfo.ThemeName)
 		return
 	}
 
@@ -89,32 +92,19 @@ func Complie(siteDirPath string, onlyRebuildHtml bool) {
 
 	//统计tag数据
 	for k := range siteInfo.Tags {
-		length := len(siteInfo.TagStatis)
 		for kk := range logList {
 			if strings.Contains(logList[kk].MetaData["tag"], siteInfo.Tags[k].Name) {
-				length2 := len(siteInfo.TagStatis)
-				if length2 == length {
-					var tagStatis = TagStatis{Name: siteInfo.Tags[k].Name, Alias: siteInfo.Tags[k].Alias, Count: 1}
-					siteInfo.TagStatis = append(siteInfo.TagStatis, tagStatis)
-				} else {
-					siteInfo.TagStatis[length2-1].Count += 1
-				}
+				siteInfo.Tags[k].Count += 1
 			}
 		}
 	}
 
 	//统计category数据
 	for k := range siteInfo.Categorys {
-		length := len(siteInfo.CategoryStatis)
+		//统计每个分类底下的日志个数
 		for kk := range logList {
 			if strings.Contains(logList[kk].MetaData["category"], siteInfo.Categorys[k].Name) || logList[kk].Type == siteInfo.Categorys[k].Alias {
-				length2 := len(siteInfo.CategoryStatis)
-				if length2 == length {
-					var categoryStatis = CategoryStatis{Name: siteInfo.Categorys[k].Name, Alias: siteInfo.Categorys[k].Alias, Count: 1}
-					siteInfo.CategoryStatis = append(siteInfo.CategoryStatis, categoryStatis)
-				} else {
-					siteInfo.CategoryStatis[length2-1].Count += 1
-				}
+				siteInfo.Categorys[k].Count += 1
 			}
 		}
 	}
@@ -122,16 +112,17 @@ func Complie(siteDirPath string, onlyRebuildHtml bool) {
 	//统计archive数据
 	for _, log := range logList {
 		year_month := log.Date.Format("2006-1")
-		length := len(siteInfo.ArchiveStatis)
-		if length == 0 || siteInfo.ArchiveStatis[length-1].YearMonth != year_month {
-			archiveStatis := ArchiveStatis{YearMonth: year_month, Count: 1}
-			siteInfo.ArchiveStatis = append(siteInfo.ArchiveStatis, archiveStatis)
+		length := len(siteInfo.Archives)
+		if length == 0 || siteInfo.Archives[length-1].YearMonth != year_month {
+			archive := Archive{YearMonth: year_month, Count: 1}
+			siteInfo.Archives = append(siteInfo.Archives, archive)
 		} else {
-			siteInfo.ArchiveStatis[length-1].Count += 1
+			siteInfo.Archives[length-1].Count += 1
 		}
 	}
 
 	//生成全局引用模版
+	siteInfo.GlobalTpl = make(map[string]string)
 	tplList, _ := filepath.Glob(themeDirPath + "\\*")
 	for _, tplFilePath := range tplList {
 		fileName := filepath.Base(tplFilePath)
@@ -141,12 +132,9 @@ func Complie(siteDirPath string, onlyRebuildHtml bool) {
 			if err != nil {
 				log.Fatal(tplFilePath + "模版文件读取失败，请检查该模版是否存在？")
 			}
-			siteInfo.GlobalTpl = make(map[string]string)
 			siteInfo.GlobalTpl[key] = string(renderTpl(siteInfo, string(template_byte), strings.TrimSuffix(filepath.Base(tplFilePath), filepath.Ext(tplFilePath))))
 		}
 	}
-
-	// log.Fatal(siteInfo.GlobalTpl)
 	//========================生成==============================
 
 	//日志生成
@@ -184,25 +172,27 @@ func Complie(siteDirPath string, onlyRebuildHtml bool) {
 		haveUpdated := false
 		_logList := LogList{}
 		categoryDirPath := compliedDirPath + "\\" + category.Alias
-		//剔出该分类下的日志列表
-		for _, logInfo := range logList {
-			if strings.Contains(logInfo.MetaData["category"], category.Name) || logInfo.Type == category.Alias {
-				_logList = append(_logList, logInfo)
-			}
-		}
-
-		//如果没有日志关联到该分类下
-		if len(_logList) == 0 {
-			os.RemoveAll(categoryDirPath)
-			continue
-		}
 
 		//判断该分类下的日志是否有变动(添加日志或修改日志)
-		for _, logInfo := range _logList {
-			if In_array(logInfo.Title, updatedLogList) /* || !Exist(categoryDirPath) */ {
+		if category.Count == 0 {
+			if !Exist(categoryDirPath + "\\index.html") {
 				haveUpdated = true
-				break
 			}
+		} else if category.Count > 0 {
+			//剔出该分类下的日志列表
+			for _, logInfo := range logList {
+				if strings.Contains(logInfo.MetaData["category"], category.Name) || logInfo.Type == category.Alias {
+					_logList = append(_logList, logInfo)
+				}
+			}
+			for _, logInfo := range _logList {
+				if In_array(logInfo.Title, updatedLogList) /* || !Exist(categoryDirPath) */ {
+					haveUpdated = true
+					break
+				}
+			}
+		} else {
+			continue
 		}
 
 		indexPage.LogList = _logList
@@ -228,25 +218,29 @@ func Complie(siteDirPath string, onlyRebuildHtml bool) {
 		haveUpdated := false
 		_logList := LogList{}
 		tagPagePath := tagDirPath + "\\" + tag.Alias + ".html"
-		for _, logInfo := range logList {
-			//如果关联到该标签并且有修改或是新创建日志
-			if strings.Contains(logInfo.MetaData["tag"], tag.Name) {
-				_logList = append(_logList, logInfo)
-			}
-		}
 
 		//如果没有日志关联到该分类下
-		if len(_logList) == 0 {
-			os.Remove(tagPagePath)
-			continue
-		}
-
-		//判断该分类下的日志是否有变动(添加日志或修改日志)
-		for _, logInfo := range _logList {
-			if In_array(logInfo.Title, updatedLogList) /* || !Exist(tagPagePath)*/ {
+		if tag.Count == 0 {
+			if !Exist(tagPagePath) {
 				haveUpdated = true
-				break
 			}
+		} else if tag.Count > 0 {
+			//选出关联至该标签的日志列表
+			for _, logInfo := range logList {
+				//如果关联到该标签并且有修改或是新创建日志
+				if strings.Contains(logInfo.MetaData["tag"], tag.Name) {
+					_logList = append(_logList, logInfo)
+				}
+			}
+			//判断该分类下的日志是否有变动(添加日志或修改日志)
+			for _, logInfo := range _logList {
+				if In_array(logInfo.Title, updatedLogList) /* || !Exist(tagPagePath)*/ {
+					haveUpdated = true
+					break
+				}
+			}
+		} else {
+			continue
 		}
 
 		tagPage.LogList = _logList
@@ -262,7 +256,6 @@ func Complie(siteDirPath string, onlyRebuildHtml bool) {
 	}
 
 	//归档生成============================
-	// if len(updatedLogList) > 0 || !Exist(archiveDirPath) {
 	os.Mkdir(archiveDirPath, os.ModePerm)
 	archivePage := ArchivePage{SiteInfo: siteInfo, RelPath: "../"}
 	archives := []Archive{}
@@ -270,7 +263,7 @@ func Complie(siteDirPath string, onlyRebuildHtml bool) {
 		year_month := log.Date.Format("2006-1")
 		length := len(archives)
 
-		if length == 0 || siteInfo.ArchiveStatis[length-1].YearMonth != year_month {
+		if length == 0 || siteInfo.Archives[length-1].YearMonth != year_month {
 			var logList LogList
 			logList = append(logList, log)
 			archive := Archive{YearMonth: year_month, LogList: logList}
@@ -283,7 +276,6 @@ func Complie(siteDirPath string, onlyRebuildHtml bool) {
 		archivePage.Archives = archives
 		Build_archive(archivePage, themeDirPath, archiveDirPath)
 	}
-	// }
 
 	//清理生成日志目录（删除未预料到的文件或者已经删除、改名的日志）
 	cleanDestPostDir(postDirPath, oldLogList)

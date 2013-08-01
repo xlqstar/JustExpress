@@ -36,6 +36,9 @@ func CopyFile(srcPath, dstPath string) {
 
 //拷贝目录
 func CopyDir(srcDirPath string, destDirPath string) {
+	srcDirPath = filepath.Clean(srcDirPath)
+	destDirPath = filepath.Clean(destDirPath)
+
 	filepath.Walk(srcDirPath,
 		func(path string, f os.FileInfo, err error) error {
 			if f == nil {
@@ -43,7 +46,7 @@ func CopyDir(srcDirPath string, destDirPath string) {
 				return nil
 			}
 			if f.IsDir() {
-				dest_dir := strings.Replace(path, srcDirPath, destDirPath, -1)
+				dest_dir := destDirPath + strings.TrimPrefix(path, srcDirPath)
 				if _, err := os.Stat(dest_dir); os.IsNotExist(err) {
 					err := os.Mkdir(dest_dir, os.ModePerm)
 					if err != nil {
@@ -52,7 +55,7 @@ func CopyDir(srcDirPath string, destDirPath string) {
 					}
 				}
 			} else {
-				dest_file := strings.Replace(path, srcDirPath, destDirPath, -1)
+				dest_file := destDirPath + strings.TrimPrefix(path, srcDirPath)
 				CopyFile(path, dest_file)
 			}
 			return nil

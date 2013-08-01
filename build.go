@@ -29,17 +29,24 @@ func build_loglistdata(destDirPath string, loglist []LogInfo) {
 //生成索引
 func Build_index(indexPage IndexPage, tplDirPath string, destDirPath string) {
 
-	pagesize := indexPage.PageSize
+	//如果没有内容则直接生成
+	if len(indexPage.LogList) == 0 {
+		indexPage.Page = Page(1)
+		build_index_page(indexPage, tplDirPath, destDirPath)
+		return
+	}
+
 	//索引处理
 	var page = 1
 	var _logList = []LogInfo{}
 	var totalCount = len(indexPage.LogList) //总数
-	var totalPage = int(math.Ceil(float64(totalCount) / float64(pagesize)))
+	var totalPage = int(math.Ceil(float64(totalCount) / float64(indexPage.PageSize)))
+
 	indexPage.TotalPage = Page(totalPage)
 	for _, v := range indexPage.LogList {
 		_logList = append(_logList, v)
 
-		if len(_logList) == pagesize || len(_logList) == totalCount {
+		if len(_logList) == indexPage.PageSize || len(_logList) == totalCount {
 			indexPage.LogList = _logList
 			indexPage.Page = Page(page)
 			if page == totalPage {

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xml:lang="en-US" lang="en-US">
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<title>{{.SiteInfo.Site}}</title>
+	<link href='http://fonts.googleapis.com/css?family=Abel' rel='stylesheet' type='text/css'>
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	<link rel="alternate" href="/atom.xml" title="{{.SiteInfo.Site}}" type="application/atom+xml">
+	<!--[if lt IE 9]><script src="././js/html5.js"></script><![endif]-->
+	<link rel="stylesheet" href="././css/style.css" type="text/css" media="screen" /> 
+	<link rel="shortcut icon" type="image/png" href="././images/favico.ico" />
+	<script type="text/javascript" src="././js/jquery.js"></script>
+	<script type="text/javascript" src="././js/main.js"></script>
+</head>
+
+<body>
+
+
+
+	<div id="articles">
+	{{range $key, $log := .LogList}}
+		<div class="article">
+			<div class="inner">
+				<h2 class="article_title title">
+					<a href="././posts/{{$log.Permalink}}/index.html">{{$log.Title}}</a>]
+				</h2>
+				<div class="article_meta">
+					<span>by</span>
+					{{$.SiteInfo.Author}}
+					<span>on</span> May 18 2013
+					<span>with</span>
+					<a href="././posts/{{$log.Permalink}}/index.html#comments">Comments</a>
+				</div>
+				<div class="text">
+				{{if $log.IsArticle}}
+					{{ $log.Summary }}
+				{{else}}
+					{{range $key, $log := $log.Summary}}
+					<p><img src="{{$log.src}}" /></p>
+					{{end}}
+				{{end}}
+				</div>
+				<div class="big_sep"></div>
+				<div class="article_meta">
+					<span>tagged:</span>
+					{{range $log.Tags}}
+					<a class="tag" href="././tags/{{.Alias}}.html">{{.Name}}</a>, 
+					{{end}}
+				</div>
+			</div> <!-- .inner -->
+		</div>  <!-- .article -->
+	<div class="sep"></div>
+	{{end}}
+	</div>
+
+
+	<div id="footer_wrapper">
+		<div id="footer">
+			<div id="footer_inner">
+				<div class="archives col">
+					<h2>Archives</h2>
+					<ul>
+					{{range .SiteInfo.ArchiveStatis}}
+					<li><a href="././archives/index.html#{{.Object.YearMonth}}">{{.Object.YearMonth}}</a></li>
+					{{end}}
+					</ul>
+				</div>
+				<div class="tag_cloud col">
+					<h2>Tag Cloud</h2>
+					{{range .SiteInfo.TagStatis}}
+					<a class="tag" href="././tags/{{.Object.Alias}}.html">{{.Object.Name}}({{.Num}})</a>
+					{{end}}
+				</div>
+				<div class="links col">
+					<h2>Links</h2>
+					<ul>
+						{{range .SiteInfo.Links}}
+						<li><a href="{{.Href}}">{{.Name}}</a></li>
+						{{end}}
+					</ul>
+				</div>
+				<div class="copyright">
+					2005 - 2013
+					© Lyric Wai, All rights reserved.
+					<span>&bull;</span> 
+					Powered by <a href="http://zespia.tw/hexo/">HEXO</a>
+					<span>&bull;</span> 
+					SealScript Theme by <a href="http://lyric.im">Lyric Wai</a>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		var _gaq = _gaq || [];
+		_gaq.push(['_setAccount', 'UA-4178606-8']);
+		_gaq.push(['_trackPageview']);
+
+		(function() {
+		var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+		var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		})();
+	</script>
+	
+	<nav id="pagination">
+		{{if .NextPage}}    
+		<a id="next" href="/page/2/" class="v_nav">
+			<span class="icon">Next</span>
+		</a>
+		{{end}}
+	</nav>
+
+</body>
+</html>

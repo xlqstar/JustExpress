@@ -28,6 +28,7 @@ type Category struct {
 	Name  string
 	Href  string
 	Alias string
+	Count int //关联到该标签的文章数
 	//IsCategory bool
 }
 
@@ -35,6 +36,7 @@ type Category struct {
 type Tag struct {
 	Name  string
 	Alias string
+	Count int //关联到该标签的文章数
 }
 
 //友情链接
@@ -47,11 +49,13 @@ type Link struct {
 type Archive struct {
 	YearMonth string
 	LogList   LogList
+	Count     int //关联到该标签的文章数
 }
 
-type CategoryStatis struct {
+/*type CategoryStatis struct {
 	Name  string
 	Alias string
+	Href  string
 	Count int
 }
 
@@ -60,12 +64,12 @@ type TagStatis struct {
 	Alias string
 	Count int
 }
-
-//统计对象
+*/
+/*//统计对象
 type ArchiveStatis struct {
 	YearMonth string
 	Count     int
-}
+}*/
 
 type LogInfo struct {
 	Title       string
@@ -83,19 +87,17 @@ type LogInfo struct {
 }
 
 type SiteInfo struct {
-	Site           string
-	SitePath       string
-	Domain         string
-	Categorys      []Category
-	Links          []Link
-	Tags           []Tag
-	TagStatis      []TagStatis
-	CategoryStatis []CategoryStatis
-	ArchiveStatis  []ArchiveStatis
-	Email          string
-	Author         string
-	Socials        map[string]string
-	PageSize       int
+	Site      string
+	SitePath  string
+	Domain    string
+	Categorys []Category
+	Links     []Link
+	Tags      []Tag
+	Archives  []Archive
+	Email     string
+	Author    string
+	Socials   map[string]string
+	PageSize  int
 
 	ImgWidth       int
 	OriginImgWidth int
@@ -135,6 +137,7 @@ type TagPage struct {
 type ArchivePage struct {
 	RelPath  string
 	SiteInfo SiteInfo
+	// LogList   []LogInfo
 	Archives []Archive
 }
 

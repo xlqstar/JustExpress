@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -102,18 +103,49 @@ func RebuildAll(sitePath string) {
 }
 
 func NewSite(siteName string) {
-	sitesRoot := SitesRoot("")
-	sitePath := sitesRoot + "\\" + siteName
-	err := os.MkdirAll(sitePath+"\\complied", os.ModePerm)
-	if err != nil {
-		CopyFile(".\\"+siteName, sitePath+"\\complied\\setting")
+
+	if !Exist(siteName) {
+		dataBytes, _ := ioutil.ReadFile("data")
+		reg, _ := regexp.Compile(`#===站点默认配置[\s\S]*#===//站点默认配置`)
+
+		content := string(reg.Find(dataBytes))
+		content = strings.TrimPrefix(content, "#===站点默认配置")
+		content = strings.TrimSuffix(content, "#===//站点默认配置")
+		content = strings.TrimSpace(content)
+		content = strings.Replace(content, "{{sitename}}", siteName, -1)
+
+		ioutil.WriteFile(siteName, []byte(content), os.ModePerm)
+		log.Println("已生成配置文件（" + siteName + "），请自定义调整站点配置参数！")
+	} else {
+		fi, _ := os.Stat(siteName)
+		if fi.IsDir() {
+			if Exist(siteName + "\\complied\\setting") { //是站点的话
+				log.Fatal("已经存在该站点，请勿重复创建")
+			} else {
+				log.Fatal("该目录存在于站点同名的文件或文件夹，请检查")
+			}
+		} else {
+			fileData, _ := ioutil.ReadFile(".\\" + siteName)
+			os.Remove(".\\" + siteName)
+			sitesRoot := SitesRoot("")
+			sitePath := sitesRoot + "\\" + siteName
+			err := os.MkdirAll(sitePath+"\\complied", os.ModePerm)
+			if err != nil {
+				ioutil.WriteFile(".\\"+siteName, fileData, os.ModePerm)
+				panic(err)
+				log.Fatal(sitePath + "目录创建失败。")
+			}
+			ioutil.WriteFile(".\\"+siteName+"\\complied\\setting", fileData, os.ModePerm)
+			// ioutil.WriteFile(".\\"+siteName, fileData, os.ModePerm)
+			CopyDir(".\\themes\\default", sitePath+"\\complied\\style")
+		}
 	}
-	log.Fatal(sitePath + "目录创建失败。")
+
 }
 
 func SitesRoot(sitesRoot string) string {
 	if len(sitesRoot) == 0 {
-		config := Configure("data")
+		config := Configure(".\\data")
 		sitesRoot = config.GetStr("SitesRoot")
 		return sitesRoot
 	} else {

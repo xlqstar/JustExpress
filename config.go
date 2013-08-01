@@ -40,7 +40,7 @@ func (config Config) GetArray(key string) []string {
 func Configure(filePath string) Config {
 	configByte, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		log.Fatal("配置文件不存在！")
+		log.Fatal(filePath + "配置文件不存在！")
 	}
 	configMap := Config{}
 	config := strings.Replace("\r\n", "\n", string(configByte), -1)
@@ -80,6 +80,12 @@ func GetCategorys(categorys []string) []Category {
 		} else if len(categoryArry) > 1 {
 			category.Href = strings.TrimSpace(categoryArry[1])
 		}
+		if len(category.Href) > 0 {
+			category.Count = -1
+		} else {
+			category.Count = 0
+		}
+
 		categorysSet = append(categorysSet, category)
 	}
 

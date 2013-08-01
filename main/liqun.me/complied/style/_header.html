@@ -1,0 +1,37 @@
+<div id="header">
+	<div id="nav_wrapper">
+		<div id="nav">
+			<div class="inner">
+				<h1 id="title"><a href="././index.html">{{.Site}}</a></h1>
+				<div id="description" class="seal"></div>
+				<ul class="right">
+					<li><a href="././index.html">首页</a></li>
+					{{range .Categorys}}
+					{{if .Href}}
+					<li><a href="{{.Href}}">{{.Name}}</a></li>
+					{{else}}
+					<li><a href="././{{.Alias}}/index.html">{{.Name}}</a></li>
+					{{end}}
+					<li class="dot">&bull;</li>
+					{{end}}
+					<li><a href="././archives/index.html">归档</a></li>
+				</ul>
+			</div>
+		</div>
+	</div>
+
+	<div id="header_inner">
+		<div id="social">
+			<a href="{{.Socials.weibo}}" target="_blank" title="Follow Me @ Twitter"><img src="././images/ic16_twitter.png"></a>
+			<a href="{{.Socials.github}}" target="_blank" title="Fork Me @ Github"><img src="././images/ic16_github.png"></a>
+			<!-- <a href="http://lyric.im/feed" target="_blank" title="Subscribe My Blog"><img src="././images/ic16_rss.png"></a> -->
+		</div>
+		<div id="search">
+			<form action="http://www.google.com.hk/search" method="get" accept-charset="utf-8">
+				<input type="text" name="q" results="0" class="search_box" placeholder="Search">
+				<input type="hidden" name="q" value="site:{{.Domain}}">
+			</form>
+		</div>
+		<div class="sep"></div>
+	</div>
+</div>
