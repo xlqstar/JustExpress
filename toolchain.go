@@ -152,8 +152,11 @@ func SitesRoot(sitesRoot string) string {
 		if !Exist(sitesRoot) {
 			log.Fatal("站点根目录不存在")
 		}
-		data := "SitesRoot:\t" + sitesRoot
-		err := ioutil.WriteFile("data", []byte(data), os.ModePerm)
+
+		configData, _ := ioutil.ReadFile(".\\data")
+		reg, _ := regexp.Compile("(SitesRoot\\s*:\\s*).*")
+		configData = reg.ReplaceAll(configData, []byte("${1}"+sitesRoot))
+		err := ioutil.WriteFile("data", configData, os.ModePerm)
 		if err != nil {
 			return "true"
 		}
