@@ -104,7 +104,7 @@ func main() {
 		if len(args) != 2 {
 			log.Fatal("参数数量异常")
 		}
-		just.SitesRoot(args[0])
+		just.SitesRoot(args[1])
 	case "qpost": //quick post
 		sitePath := just.GetSitePath(*siteName)
 		if len(args) == 2 {
