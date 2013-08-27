@@ -159,7 +159,6 @@ func build_album(logPage LogPage, tplDirPath string, destLogDir string, onlyRebu
 	makeHTML(&logPage, destAlbumDir+"\\index.html", tplDirPath+"\\album.html")
 }
 
-//global var : onlyRebuildHtml
 func build_article(logPage LogPage, tplDirPath string, destLogDir string, onlyRebuildHtml bool) {
 	destArticleDir := destLogDir
 	if !onlyRebuildHtml {

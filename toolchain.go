@@ -50,12 +50,7 @@ func Delete(sitePath string, title string) {
 	fileList, _ := filepath.Glob(sitePath + "\\*")
 	for k := range fileList {
 		fileName := filepath.Base(fileList[k])
-		pos := strings.LastIndex(fileName, "@")
-		var fileTitle string
-		if pos >= 0 {
-			fileTitle = fileName[0:pos]
-		}
-		if fileTitle == title {
+		if fileName == title {
 			err := os.RemoveAll(fileList[k])
 			if err != nil {
 				log.Fatal("删除《" + title + "》操作失败")
@@ -83,10 +78,10 @@ func SwitchTheme(sitePath string, themeName string) {
 	SyncTheme(sitePath+"\\complied\\style", themeName)
 	os.RemoveAll(sitePath + "\\complied\\style")
 	CopyDir(".\\themes\\"+themeName, sitePath+"\\complied\\style")
-	// Complie(sitePath, true)
+	Rebuild(sitePath)
 }
 
-//重新构建(只构建html部分)
+//重新构建(只构建html部分，主要用于switchTheme后使用)
 func Rebuild(sitePath string) {
 	Complie(sitePath, true)
 }
@@ -95,7 +90,10 @@ func Rebuild(sitePath string) {
 func RebuildAll(sitePath string) {
 	fileList, _ := filepath.Glob(sitePath + "\\complied\\*")
 	for k := range fileList {
-		if !(filepath.Base(fileList[k]) == "style" || filepath.Base(fileList[k]) == "setting") {
+		/*		if !(filepath.Base(fileList[k]) == "style" || filepath.Base(fileList[k]) == "setting" || filepath.Base(fileList[k]) == ".git" || filepath.Base(fileList[k]) == ".git") {
+				os.RemoveAll(fileList[k])
+			}*/
+		if Exist(fileList[k] + "\\index.html") {
 			os.RemoveAll(fileList[k])
 		}
 	}

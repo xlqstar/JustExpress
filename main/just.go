@@ -7,6 +7,8 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strconv"
 )
 
 const (
@@ -16,16 +18,19 @@ Author:    Xiao Liqun(xlqstar@gmail.com)
 
 Usage:
 	just newsite <site_name>
-	just [-site <site_name>] complie
-	just [-site <site_name>] qpost <title>
-	just [-site <site_name>] post <title> <log_type> <categorys> <tags>
-	just [-site <site_name>] delete <title>
-	just [-site <site_name>] switchtheme <theme_name>
+	just [-site <site_name>] build
 	just [-site <site_name>] rebuild
 	just [-site <site_name>] rebuildall
+	just [-site <site_name>] qpost [<log_type>] <title>
+	just [-site <site_name>] post <title> <log_type> <categorys> <tags>
+	just [-site <site_name>] delete <title>
+	just [-site <site_name>] switchtheme [<theme_name>]
 	just [-site <site_name>] resize
 	just [-site <site_name>] preview
 	just [-site <site_name>] switchsitesroot <sites_root_path>
+
+PS:
+	log_type: album | article
 `
 )
 
@@ -50,9 +55,6 @@ func main() {
 	switch args[0] {
 	default:
 		log.Fatal("请输入正确命令")
-	case "complie":
-		sitePath := just.GetSitePath(*siteName)
-		just.Complie(sitePath, false)
 	case "post":
 		sitePath := just.GetSitePath(*siteName)
 		var title, logType, categorys, tags string
@@ -66,17 +68,60 @@ func main() {
 		}
 		just.Post(sitePath, title, logType, categorys, tags)
 	case "delete":
-		if len(args) != 2 {
+		sitePath := just.GetSitePath(*siteName)
+		if len(args) == 2 {
+			just.Delete(sitePath, args[1])
+		} else if len(args) == 1 {
+			fmt.Println("\n日志列表：\n")
+			fileList, _ := filepath.Glob(sitePath + "\\*")
+			var _fileList []string
+			for k := range fileList {
+				if filepath.Base(fileList[k]) == "complied" {
+					if k-1 < 0 {
+						_fileList = fileList[k+1:]
+					} else if k+1 > 0 {
+						_fileList = fileList[0 : k-1]
+					} else {
+						_fileList = append(fileList[0:k-1], fileList[k+1:]...)
+					}
+					break
+				}
+			}
+			for k := range _fileList {
+				_fileList[k] = filepath.Base(_fileList[k])
+				fmt.Println(strconv.Itoa(k) + ". " + _fileList[k])
+			}
+			fmt.Print("\n请输入序号：")
+			var num int
+			fmt.Scanf("%d", &num)
+			if fileList[num] != "complied" {
+				just.Delete(sitePath, _fileList[num])
+			} else {
+				fmt.Println("\n\n请按照提示输入！")
+			}
+		} else {
 			log.Fatal("参数数量异常")
 		}
-		sitePath := just.GetSitePath(*siteName)
-		just.Delete(sitePath, args[1])
 	case "switchtheme":
-		if len(args) != 2 {
+		sitePath := just.GetSitePath(*siteName)
+		if len(args) == 2 {
+			just.SwitchTheme(sitePath, args[1])
+		} else if len(args) == 1 {
+			fileList, _ := filepath.Glob(".\\themes\\*")
+			fmt.Println("\n有如下主题可供选择：")
+			for k := range fileList {
+				fmt.Println("    " + filepath.Base(fileList[k]))
+			}
+			fmt.Print("\n请输入主题名称：")
+			var str string
+			fmt.Scanf("%s", &str)
+			just.SwitchTheme(sitePath, str)
+		} else {
 			log.Fatal("参数数量异常")
 		}
+	case "build":
 		sitePath := just.GetSitePath(*siteName)
-		just.SwitchTheme(sitePath, args[1])
+		just.Complie(sitePath, false)
 	case "rebuild": //重新构建(只构建html部分)
 		if len(args) != 1 {
 			log.Fatal("参数数量异常")
