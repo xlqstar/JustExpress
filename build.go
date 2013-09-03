@@ -1,271 +1,401 @@
-//日志生成函数集
-
+//just主要入口函数，负责编译日志
 package just
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
-	"github.com/wendal/gor"
 	"io/ioutil"
 	"log"
-	"math"
 	"os"
-	"path"
 	"path/filepath"
-	"reflect"
-	"regexp"
-	"strconv"
 	"strings"
-	"text/template"
 )
 
-//生成日志列表数据
-func build_loglistdata(destDirPath string, loglist []LogInfo) {
-	logList_json, _ := json.MarshalIndent(loglist, "", "\t")
-	ioutil.WriteFile(destDirPath+"\\loglist.json", logList_json, os.ModePerm)
-}
+var siteInfo SiteInfo //全局变量：站点信息
 
-//生成索引
-func Build_index(indexPage IndexPage, tplDirPath string, destDirPath string) {
+func Build(siteDirPath string, onlyRebuildHtml bool) {
+	var logList LogList                 //全部日志列表
+	var buildedLogList map[string]int64 //已生成的日志列表
+	var updatedLogList []string         //有修改变动的日志列表
 
-	//如果没有内容则直接生成
-	if len(indexPage.LogList) == 0 {
-		indexPage.Page = Page(1)
-		build_index_page(indexPage, tplDirPath, destDirPath)
+	//路径参数配置列表
+	var compliedDirPath = siteDirPath + "\\complied"
+	var themeDirPath = compliedDirPath + "\\style"
+	var postDirPath = compliedDirPath + "\\posts"
+	var archiveDirPath = compliedDirPath + "\\archives"
+	var tagDirPath = compliedDirPath + "\\tags"
+	// var indexDirPath = compliedDirPath
+	siteCfg := Configure(compliedDirPath + "\\setting")
+	themeCfg := Configure(themeDirPath + "\\meta")
+
+	siteInfo.Site = siteCfg.GetStr("site")
+	siteInfo.Domain = siteCfg.GetStr("domain")
+	siteInfo.Author = siteCfg.GetStr("author")
+	siteInfo.PageSize = siteCfg.GetInt("pageSize")
+	siteInfo.Categorys = GetCategorys(siteCfg.GetArray("categorys"))
+	siteInfo.Tags = GetTags(siteCfg.GetArray("tags"))
+	siteInfo.Links = GetLinks(siteCfg.GetArray("links"))
+	siteInfo.Socials = GetSocials(siteCfg.GetArray("socials"))
+
+	siteInfo.ThemeName = themeCfg.GetStr("ThemeName")
+	siteInfo.ImgWidth = themeCfg.GetInt("ImgWidth")
+	siteInfo.OriginImgWidth = themeCfg.GetInt("OriginImgWidth")
+
+	siteInfo.SitePath = siteDirPath
+
+	buildedLogList = getBuildedLogList(postDirPath)
+
+	//解析日志、统计站点信息============================
+
+	//解析log数据
+	logDirList, _ := filepath.Glob(siteDirPath + "\\*")
+	os.Mkdir(postDirPath, os.ModePerm)
+	for k := range logDirList {
+		if filepath.Base(logDirList[k]) == "complied" {
+			continue
+		}
+		logInfo := Decode_log(logDirList[k], siteInfo)
+
+		if logList.Contain(logInfo.Permalink) {
+			log.Fatal("《" + logInfo.Title + "》文章转拼音后跟其他文章冲突,请指定alias别名")
+		}
+
+		logList = append(logList, logInfo)
+	}
+
+	//检查变动
+	for k := range logList {
+		//如果没有创建过 或者 如果有更新
+		_, ok := buildedLogList[logList[k].Permalink]
+		if !ok || int64(logList[k].LastModTime) > buildedLogList[logList[k].Permalink] || onlyRebuildHtml {
+			updatedLogList = append(updatedLogList, logList[k].Title)
+		}
+	}
+
+	// deletedLogList := buildedLogList
+	//检查是否有删除的日志，获取被删除日志列表
+	for _, logInfo := range logList {
+		delete(buildedLogList, logInfo.Permalink)
+	}
+
+	var deletedLogList []map[string]string
+	if len(buildedLogList) > 0 {
+		fi, _ := ioutil.ReadFile(compliedDirPath + "\\loglist.json")
+		var lastLogList []LogInfo
+		json.Unmarshal(fi, &lastLogList)
+		for permalink := range buildedLogList {
+			for k := range lastLogList {
+				if lastLogList[k].Permalink == permalink {
+					deletedLogList = append(deletedLogList, lastLogList[k].MetaData)
+					break
+				}
+			}
+		}
+
+		/*		if err != nil {
+				fmt.Println("error in translating,", err.Error())
+				return
+			}*/
+		/*		for buildedLogPermalink, _ := range buildedLogList {
+				fi, err := ioutil.ReadFile(postDirPath + "\\" + buildedLogPermalink + "\\article.md")
+				if err != nil {
+					fi, err = ioutil.ReadFile(postDirPath + "\\" + buildedLogPermalink + "\\meta")
+				}
+				metaData, _ := decode_meta(string(fi))
+				deletedLogList = append(deletedLogList, metaData)
+			}*/
+
+	}
+
+	//同步主题
+	SyncTheme(themeDirPath, siteInfo.ThemeName)
+
+	//若无改动则直接返回
+	if len(updatedLogList) == 0 && len(deletedLogList) == 0 {
+		//清理生成日志目录（删除未预料到的文件或者已经删除、改名的日志）
+		// cleanDestPostDir(postDirPath, oldLogList)
+		//复制主题
 		return
 	}
 
-	//索引处理
-	var page = 1
-	var _logList = []LogInfo{}
-	var totalCount = len(indexPage.LogList) //总数
-	var totalPage = int(math.Ceil(float64(totalCount) / float64(indexPage.PageSize)))
+	//日志列表排序
+	logList = LogSort(logList)
 
-	indexPage.TotalPage = Page(totalPage)
-	for _, v := range indexPage.LogList {
-		_logList = append(_logList, v)
+	//=======================统计===========================
 
-		if len(_logList) == indexPage.PageSize || len(_logList) == totalCount {
-			indexPage.LogList = _logList
-			indexPage.Page = Page(page)
-			if page == totalPage {
-				indexPage.NextPage = Page(1)
-			} else {
-				indexPage.NextPage = Page(page + 1)
+	//统计tag数据
+	for k := range siteInfo.Tags {
+		for kk := range logList {
+			if strings.Contains(logList[kk].MetaData["tag"], siteInfo.Tags[k].Name) {
+				siteInfo.Tags[k].Count += 1
 			}
-
-			if page == 1 {
-				indexPage.PrevPage = Page(totalPage)
-			} else {
-				indexPage.PrevPage = Page(page - 1)
-			}
-
-			build_index_page(indexPage, tplDirPath, destDirPath)
-
-			page++
-			_logList = []LogInfo{}
 		}
 	}
-}
 
-func build_index_page(indexPage IndexPage, tplDirPath string, destDirPath string) {
-	for k, v := range indexPage.LogList {
-
-		if v.Summary == nil || v.Summary == "" {
-			if v.Type == "article" {
-				content, _, _ := _decode_article(v.Src)
-				indexPage.LogList[k].Summary = gor.MarkdownToHtml(string(content))
-			} else if v.Type == "album" {
-				indexPage.LogList[k].Summary, _ = _decode_album(v.Src)
+	//统计category数据
+	for k := range siteInfo.Categorys {
+		//统计每个分类底下的日志个数
+		for kk := range logList {
+			if strings.Contains(logList[kk].MetaData["category"], siteInfo.Categorys[k].Name) || logList[kk].Type == siteInfo.Categorys[k].Alias {
+				siteInfo.Categorys[k].Count += 1
 			}
+		}
+	}
+
+	//统计archive数据
+	for _, log := range logList {
+		year_month := log.Date.Format("2006-1")
+		length := len(siteInfo.Archives)
+		if length == 0 || siteInfo.Archives[length-1].YearMonth != year_month {
+			archive := Archive{YearMonth: year_month, Count: 1}
+			siteInfo.Archives = append(siteInfo.Archives, archive)
 		} else {
-			if v.Type == "article" {
-				indexPage.LogList[k].Summary = gor.MarkdownToHtml(string(v.Summary.(Article)))
-			}
+			siteInfo.Archives[length-1].Count += 1
 		}
 	}
 
-	page := ""
-	if indexPage.Page > 1 {
-		page = "_" + strconv.Itoa(int(indexPage.Page))
-	}
-
-	dest_filename := destDirPath + "\\index" + page + ".html"
-	makeHTML(&indexPage, dest_filename, tplDirPath+"\\index.html")
-	log.Println(ConvertPath(dest_filename) + " 成功生成！")
-}
-
-func Build_log(logPage LogPage, tplDirPath string, destDirPath string, onlyRebuildHtml bool) {
-	var destLogDir string
-	destLogDir = destDirPath + "\\" + logPage.LogInfo.Permalink
-
-	if !onlyRebuildHtml {
-		err := os.Mkdir(destLogDir, os.ModePerm)
-		if os.IsExist(err) {
-			os.RemoveAll(destLogDir)
-			err = os.Mkdir(destLogDir, os.ModePerm)
+	//生成全局引用模版
+	siteInfo.GlobalTpl = make(map[string]string)
+	tplList, _ := filepath.Glob(themeDirPath + "\\*")
+	for _, tplFilePath := range tplList {
+		fileName := filepath.Base(tplFilePath)
+		if strings.HasPrefix(fileName, "_") && strings.HasSuffix(fileName, ".html") {
+			key := strings.TrimPrefix(strings.TrimSuffix(fileName, ".html"), "_")
+			template_byte, err := ioutil.ReadFile(tplFilePath)
 			if err != nil {
-				log.Fatal("重建" + destLogDir + "目录发生未预料到的错误，可能正有其他进程占用该目录。")
+				log.Fatal(tplFilePath + "模版文件读取失败，请检查该模版是否存在？")
 			}
+			siteInfo.GlobalTpl[key] = string(renderTpl(siteInfo, string(template_byte), strings.TrimSuffix(filepath.Base(tplFilePath), filepath.Ext(tplFilePath))))
 		}
 	}
+	//========================生成==============================
 
-	if logPage.LogInfo.Type == "article" { //文章
-		build_article(logPage, tplDirPath, destLogDir, onlyRebuildHtml)
-	} else if logPage.LogInfo.Type == "album" { //相册
-		build_album(logPage, tplDirPath, destLogDir, onlyRebuildHtml)
+	//日志生成
+	last := len(logList) - 1
+	for k, logInfo := range logList {
+		if In_array(logInfo.Title, updatedLogList) {
+			var logPage = LogPage{LogInfo: logList[k], SiteInfo: siteInfo, RelPath: "../../"}
+			if (k - 1) < 0 {
+				logPage.PrevLog = logList[last]
+			} else {
+				logPage.PrevLog = logList[k-1]
+			}
+			if (k + 1) > last {
+				logPage.NextLog = logList[0]
+			} else {
+				logPage.NextLog = logList[k+1]
+			}
+			Build_log(logPage, themeDirPath, postDirPath, onlyRebuildHtml)
+		} else {
+			//TODO
+			update_log(postDirPath+"\\"+logInfo.Permalink+"\\index.html", "../../")
+		}
+
 	}
 
-	log.Println("《" + logPage.LogInfo.Title + "》成功生成！")
-}
+	//总索引生成============================
+	// os.Mkdir(indexDirPath, os.ModePerm)
+	indexPage := IndexPage{Category: Category{Name: "首页", Alias: "index"}, SiteInfo: siteInfo, PageSize: siteInfo.PageSize, LogList: logList, RelPath: "./"}
+	// if len(updatedLogList) > 0 || !Exist(compliedDirPath+"\\index.html") {
+	Build_index(indexPage, themeDirPath, compliedDirPath)
+	// }
 
-func build_album(logPage LogPage, tplDirPath string, destLogDir string, onlyRebuildHtml bool) {
-	destAlbumDir := destLogDir
-	smallImgWidth := logPage.SiteInfo.ImgWidth
-	bigImgWidth := logPage.SiteInfo.OriginImgWidth
+	//按分类生成索引
+	for _, category := range siteInfo.Categorys {
+		haveUpdated := false
+		_logList := LogList{}
+		categoryDirPath := compliedDirPath + "\\" + category.Alias
 
-	logPage.LogInfo.Log, _ = _decode_album(logPage.LogInfo.Src)
-	for k, photo := range logPage.LogInfo.Log.(Album) {
-		srcPhotoFullFileName := photo.Src
-		destPhotoFullFileName := strings.Replace(srcPhotoFullFileName, logPage.LogInfo.Src, destAlbumDir, -1)
-		photoFileName := photo.PhotoFileName
-		photoWidth := photo.Width
-		var originPhotoFullFileName string
-		if strings.ToLower(path.Ext(photoFileName)) == ".gif" || photoWidth < smallImgWidth {
-			originPhotoFullFileName = destPhotoFullFileName
-			if !onlyRebuildHtml {
-				CopyFile(srcPhotoFullFileName, destPhotoFullFileName)
-			}
-		} else if photoWidth > bigImgWidth {
-			originPhotoFullFileName = strings.Replace(destPhotoFullFileName, photoFileName, "origin_"+photoFileName, -1)
-			if !onlyRebuildHtml {
-				Resize(srcPhotoFullFileName, destPhotoFullFileName, uint(smallImgWidth))
-				if siteInfo.OriginImgWidth > 0 {
-					Resize(srcPhotoFullFileName, originPhotoFullFileName, uint(bigImgWidth))
+		if onlyRebuildHtml {
+			haveUpdated = true
+		}
+
+		if !haveUpdated && len(deletedLogList) > 0 {
+			for _, logMeta := range deletedLogList {
+				if strings.Contains(logMeta["category"], category.Name) {
+					haveUpdated = true
+					break
 				}
 			}
-		} else if photoWidth > smallImgWidth {
-			originPhotoFullFileName = strings.Replace(destPhotoFullFileName, photoFileName, "origin_"+photoFileName, -1)
-			if !onlyRebuildHtml {
-				Resize(srcPhotoFullFileName, destPhotoFullFileName, uint(smallImgWidth))
-				CopyFile(srcPhotoFullFileName, originPhotoFullFileName)
+		}
+
+		//判断该分类下的日志是否有变动(添加日志或修改日志)
+		if !haveUpdated {
+			if category.Count == 0 {
+				if !Exist(categoryDirPath + "\\index.html") {
+					haveUpdated = true
+				}
+			} else if category.Count > 0 {
+				//剔出该分类下的日志列表
+				for _, logInfo := range logList {
+					if strings.Contains(logInfo.MetaData["category"], category.Name) || logInfo.Type == category.Alias {
+						_logList = append(_logList, logInfo)
+					}
+				}
+				for _, logInfo := range _logList {
+					if In_array(logInfo.Title, updatedLogList) /* || !Exist(categoryDirPath) */ {
+						haveUpdated = true
+						break
+					}
+				}
+			} else {
+				continue
 			}
 		}
 
-		photo.OriginPhotoFileName = filepath.Base(originPhotoFullFileName)
-		logPage.LogInfo.Log.(Album)[k] = photo
-	}
-	makeHTML(&logPage, destAlbumDir+"\\index.html", tplDirPath+"\\album.html")
-}
+		indexPage.LogList = _logList
+		indexPage.Category = category
+		indexPage.RelPath = "../"
 
-func build_article(logPage LogPage, tplDirPath string, destLogDir string, onlyRebuildHtml bool) {
-	destArticleDir := destLogDir
-	if !onlyRebuildHtml {
-		if filepath.Base(logPage.LogInfo.Src) == "article.md" {
-			srcArticleDir := filepath.Dir(logPage.LogInfo.Src)
-			CopyDir(srcArticleDir, destArticleDir)
+		if haveUpdated {
+			Remkdir(categoryDirPath)
+			Build_index(indexPage, themeDirPath, categoryDirPath)
 		} else {
-			if _, err := os.Stat(destArticleDir); os.IsNotExist(err) {
-				os.Mkdir(destArticleDir, os.ModePerm)
+			//TODO
+			update_index(indexPage, categoryDirPath)
+		}
+
+	}
+
+	//标签页生成============================
+	os.Mkdir(tagDirPath, os.ModePerm)
+
+	tagPage := TagPage{SiteInfo: siteInfo, RelPath: "../"}
+	//按标签生成索引
+	for _, tag := range siteInfo.Tags {
+		haveUpdated := false
+		_logList := LogList{}
+		tagPagePath := tagDirPath + "\\" + tag.Alias + ".html"
+
+		if onlyRebuildHtml {
+			haveUpdated = true
+		}
+
+		if !haveUpdated && len(deletedLogList) > 0 {
+			for _, logMeta := range deletedLogList {
+				if strings.Contains(logMeta["tag"], tag.Name) {
+					haveUpdated = true
+					break
+				}
 			}
-			CopyFile(logPage.LogInfo.Src, destArticleDir+"\\article.md")
+		}
+		//如果没有日志关联到该分类下
+		if !haveUpdated {
+			if tag.Count == 0 {
+				if !Exist(tagPagePath) {
+					haveUpdated = true
+				}
+			} else if tag.Count > 0 {
+				//选出关联至该标签的日志列表
+				for _, logInfo := range logList {
+					//如果关联到该标签并且有修改或是新创建日志
+					if strings.Contains(logInfo.MetaData["tag"], tag.Name) {
+						_logList = append(_logList, logInfo)
+					}
+				}
+				//判断该分类下的日志是否有变动(添加日志或修改日志)
+				for _, logInfo := range _logList {
+					if In_array(logInfo.Title, updatedLogList) /* || !Exist(tagPagePath)*/ {
+						haveUpdated = true
+						break
+					}
+				}
+			} else {
+				continue
+			}
+		}
+
+		tagPage.LogList = _logList
+		tagPage.Tag = tag
+
+		if haveUpdated {
+			Build_tagpage(tagPage, themeDirPath, tagDirPath)
+		} else {
+			//TODO
+			update_tag(tagDirPath+"\\"+tag.Alias+".html", "../")
+		}
+
+	}
+
+	//归档生成============================
+	os.Mkdir(archiveDirPath, os.ModePerm)
+	archivePage := ArchivePage{SiteInfo: siteInfo, RelPath: "../"}
+	archives := []Archive{}
+	for _, log := range logList {
+		year_month := log.Date.Format("2006-1")
+		length := len(archives)
+
+		if length == 0 || siteInfo.Archives[length-1].YearMonth != year_month {
+			var logList LogList
+			logList = append(logList, log)
+			archive := Archive{YearMonth: year_month, LogList: logList}
+			archives = append(archives, archive)
+		} else {
+			archives[length-1].LogList = append(archives[length-1].LogList, log)
 		}
 	}
-	content, _, _ := _decode_article(logPage.LogInfo.Src)
-	logPage.LogInfo.Log = gor.MarkdownToHtml(string(content))
-	makeHTML(&logPage, destArticleDir+"\\index.html", tplDirPath+"\\article.html")
+	// if len(archives) > 0 {
+	archivePage.Archives = archives
+	Build_archive(archivePage, themeDirPath, archiveDirPath)
+	// }
+
+	//清理生成日志目录（删除未预料到的文件或者已经删除、改名的日志）
+	cleanDestPostDir(postDirPath, buildedLogList)
+
+	build_loglistdata(compliedDirPath, logList)
+
 }
 
-func Build_tagpage(tagPage TagPage, tplDirPath string, destTagDir string) {
-	makeHTML(&tagPage, destTagDir+"\\"+tagPage.Tag.Alias+".html", tplDirPath+"\\tag.html")
-	log.Println(ConvertPath(destTagDir+"\\"+tagPage.Tag.Alias+".html") + " 标签页生成")
-}
-
-func Build_archive(archivePage ArchivePage, tplDirPath string, destArchiveDir string) {
-	makeHTML(&archivePage, destArchiveDir+"\\index.html", tplDirPath+"\\archive.html")
-	log.Println(ConvertPath(destArchiveDir+"\\index.html") + " 归档页生成")
-}
-
-/*#先渲染负载小 后replace负载大
-renderTpl
-replaceGlobalTlp
-replaceRelPath
-
-#先替换global渲染负载大 后replace，负载大
-replaceGlobalTlp
-renderTpl
-replaceRelPath
-
-#这种先替换relPath负载小 先替换global渲染负载大
-replaceGlobalTlp
-replaceRelPath
-renderTpl*/
-func makeHTML(data interface{}, dest string, templatePath string) {
-
-	template_byte, err := ioutil.ReadFile(templatePath)
-	if err != nil {
-		log.Fatal(templatePath + "模版文件读取失败，请检查该模版是否存在？")
+func getBuildedLogList(postDirPath string) map[string]int64 {
+	oldLogList := make(map[string]int64)
+	dirList, _ := filepath.Glob(postDirPath + "\\*")
+	for _, v := range dirList {
+		fi, err := os.Stat(v)
+		if err != nil {
+			log.Println("读取" + v + "文件出现未预料的问题")
+			continue
+		} else {
+			oldLogList[filepath.Base(v)] = GetCreationTime(fi)
+		}
 	}
-
-	relPath := reflect.ValueOf(data).Elem().FieldByName("RelPath").String()
-
-	html := replaceGlobalTlp(string(template_byte))
-	html = replaceRelPath(html, relPath)
-	html_bytes := renderTpl(data, html, strings.TrimSuffix(filepath.Base(templatePath), filepath.Ext(templatePath)))
-
-	ioutil.WriteFile(dest, html_bytes, os.ModePerm)
+	return oldLogList
 }
 
-func renderTpl(data interface{}, template_str string, tplName string) []byte {
-	out := bytes.NewBuffer([]byte{})
-	tpl := template.New(tplName)
-	tpl.Funcs(template.FuncMap{"first": first, "last": last, "eq": eq, "neq": neq, "not": not, "add": add, "minus": minus})
-	tpl.Parse(template_str)
-	if err := tpl.Execute(out, data); err != nil {
-		fmt.Println(err)
+func cleanDestPostDir(postDirPath string, deletedLogList map[string]int64) {
+	for k := range deletedLogList {
+		_postDirPath := postDirPath + "\\" + k
+		err := os.RemoveAll(_postDirPath)
+		if err != nil {
+			panic(err)
+			log.Println("清理" + ConvertPath(_postDirPath) + "目录出现未预料到的问题")
+		} else {
+			log.Println(ConvertPath(_postDirPath) + "目录清理成功")
+		}
 	}
-	return out.Bytes()
 }
 
-func replaceRelPath(content string, relPath string) string {
-	//主题路径处理
-	content = strings.Replace(content, "././js/", relPath+"style/js/", -1)
-	content = strings.Replace(content, "././css/", relPath+"style/css/", -1)
-	content = strings.Replace(content, "././images/", relPath+"style/images/", -1)
+//同步主题
+func SyncTheme(siteThemeDirPath string, themeName string) {
 
-	content = strings.Replace(content, "././", relPath, -1)
-	return content
+	if !Exist(siteThemeDirPath) {
+		log.Fatal("模版文件缺失！可能是误删除！请使用tool添加模版文件或者直接手动复制。")
+	} else /*if Exist(siteThemeDirPath + "\\meta")*/ {
+		var localThemeList []string
+		fileList, _ := filepath.Glob(".\\themes\\*")
+		for k := range fileList {
+			if len(themeName) > 0 {
+				localThemeList = append(localThemeList, filepath.Base(fileList[k]))
+			}
+		}
+		if !In_array(themeName, localThemeList) {
+			CopyDir(siteThemeDirPath, ".\\themes\\"+themeName)
+		}
+	} /* else {
+		log.Fatal("站点模板文件包不完整，缺失描述元数据文件！")
+	}*/
 }
 
-//全局变量: siteInfo
-//替换全局布局模版
-func replaceGlobalTlp(content string) string {
-	for tplName, tpl := range siteInfo.GlobalTpl {
-		reg, _ := regexp.Compile(`<!--` + tplName + `-->[\s\S]*<!--//` + tplName + `-->`)
-		content = reg.ReplaceAllString(content, "<!--"+tplName+"-->"+tpl+"<!--//"+tplName+"-->")
-	}
-	return content
-}
-
-/*
-func getRelPath(subDirPath string) string {
-	subDirPath = fixPath(subDirPath)
-	if len(subDirPath) == 0 {
-		return "./"
-	}
-	num := strings.Count(subDirPath, "\\")
-	relPath := ""
-	for i := 0; i < num+1; i++ {
-		relPath = relPath + "../"
-	}
-	return relPath
-}
-
-func fixPath(path string) string {
-	path = Trim(path)
-	path = strings.Replace(path, "/", "\\", -1)
-	path = strings.TrimPrefix(path, "\\")
-	path = strings.TrimSuffix(path, "\\")
+func ConvertPath(path string) string {
+	path = strings.TrimPrefix(path, siteInfo.SitePath)
+	path = siteInfo.Site + path
 	return path
-}*/
+}

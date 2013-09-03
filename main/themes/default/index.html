@@ -27,10 +27,12 @@
 					<a href="././posts/{{$log.Permalink}}/index.html">{{$log.Title}}</a>
 				</h2>
 				<div class="article_meta">
-				<span>by</span>{{$.SiteInfo.Author}}
-				<span>on</span>{{$log.Date.Format " Jan 2 2006"}}
+				<span>by</span>
+				{{$.SiteInfo.Author}}
+				<span>on</span>
+				{{$log.Date.Format " Jan 2 2006"}}
 				<span>with</span>
-					<a href="././posts/{{$log.Permalink}}/index.html#comments">Comments</a>
+				<a href="././posts/{{$log.Permalink}}/index.html#comments">Comments</a>
 				</div>
 				<div class="text">
 				{{if $log.IsArticle}}
@@ -38,6 +40,7 @@
 				{{else}}
 					{{range $key, $photo := $log.Summary}}
 					<p><img src="././posts/{{$log.Permalink}}/{{$photo.PhotoFileName}}" /></p>
+					{{if $photo.HasComment}}<p style="text-align:center;margin-top:-15px">[{{$photo.Comment}}]</p>{{end}}
 					{{end}}
 				{{end}}
 				</div>

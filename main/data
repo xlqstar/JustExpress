@@ -5,7 +5,10 @@ SitesRoot:	F:\kuaipan\Projects\
 #索引页每页的条目数
 pageSize:		10
 
-#开放式分类(特殊分类：article、album)
+#Just采用开放式分类，即一篇日志可以同时隶属多个分类
+#Just中有两个特殊分类：article、album，这两个分类名是内置的魔术分类名，他们是日志类型名，在Just中存在两种日志类型，即文章型(article)，相册型(album)
+#若填写album作为一个分类的话，所有相册型日志都将自动归为其中，即使MetaData中未填写
+#Just中分类名还有一种特殊形式即about@http://www.baidu.com，这种分类名为一种外链分类，@之前是站内/导航中显示的分类名，后面是他的外链链接地址。
 categorys:		album|随记(other)|WEB(web)|嵌入式(embed)|about@http://www.baidu.com
 
 #标签集
@@ -26,7 +29,9 @@ author:			xlqstar
 #Email
 Email:			xlqstar@gmail.com
 
-#social
+#社交账号
+#@之前是社交账号类型识别，目前约定有weibo、github、facebook、twitter
+#这个标识用于某些模版中可以自动调用显示相应的社交账号链接
 socials:		weibo @ http://weibo.com/u/2867098822 | github @ https://github.com/xlqstar
 
 #===//站点默认配置

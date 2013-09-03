@@ -141,6 +141,13 @@ type ArchivePage struct {
 	Archives []Archive
 }
 
+func (photo Photo) HasComment() bool {
+	if len(photo.Comment) > 0 {
+		return true
+	}
+	return false
+}
+
 //索引模版中需要
 func (logInfo LogInfo) IsArticle() bool {
 	if logInfo.Type == "article" {

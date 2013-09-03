@@ -3,12 +3,14 @@
 package just
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -24,23 +26,47 @@ func GetSitePath(siteName string) string {
 			}
 		}
 		if len(sitesArry) == 0 {
-			log.Fatal("站点根目录不存在任何站点")
+			fmt.Println("站点根目录不存在任何站点，请通过`newsite`创建站点，或通过`switchsitesroot`命令更换站点根目录路径，通过`just -h`命令可以获取帮助。")
+			os.Exit(0)
+		} else if len(sitesArry) == 1 {
+			fmt.Println()
+			fmt.Println("[ 当前操作站点：" + sitesArry[0] + " ]")
+			fmt.Println()
+			return sitesArry[0]
 		} else if len(sitesArry) > 1 {
-			var sites string
-			for _, v := range sitesArry {
-				if sites != "" {
-					sites += ","
-				}
-				sites += filepath.Base(v)
+			fmt.Println()
+			fmt.Println("站点列表如下：")
+			for k := range sitesArry {
+				fmt.Println("    " + strconv.Itoa(k) + ". " + sitesArry[k])
 			}
-			log.Fatal("有多个站点(" + sites + ")，请通过-site参数明确指定当前操作对象")
+			fmt.Println()
+			var siteNum int
+			for true {
+				fmt.Print("请输入序号：")
+				fmt.Scanf("%d\n", &siteNum)
+				if siteNum >= 0 && siteNum < len(sitesArry) {
+					break
+				} else {
+					fmt.Println()
+					fmt.Println("不存在该站点，请重新输入正确的序号！")
+					fmt.Println()
+				}
+			}
+
+			fmt.Println()
+			fmt.Println("[ 当前操作站点：" + sitesArry[siteNum] + " ]")
+			fmt.Println()
+			return sitesArry[siteNum]
 		}
-		return sitesArry[0]
 	}
 
 	sitePath := sitesRoot + "\\" + siteName
 	if !Exist(sitePath + "\\complied\\setting") {
 		log.Fatal(sitePath + "\\complied\\setting" + "站点目录结构不符合预期，有异常！确定站点标识输入是否错误！？")
+	} else {
+		fmt.Println()
+		fmt.Println("[ 当前操作站点：" + sitePath + " ]")
+		fmt.Println()
 	}
 
 	return sitePath
@@ -71,7 +97,7 @@ func ImgResize(sitePath string) {
 			os.RemoveAll(sitePath + "\\complied\\posts\\" + logInfo.Permalink)
 		}
 	}
-	Complie(sitePath, false)
+	Build(sitePath, false)
 }
 
 func SwitchTheme(sitePath string, themeName string) {
@@ -83,21 +109,18 @@ func SwitchTheme(sitePath string, themeName string) {
 
 //重新构建(只构建html部分，主要用于switchTheme后使用)
 func Rebuild(sitePath string) {
-	Complie(sitePath, true)
+	Build(sitePath, true)
 }
 
 //重新构建(彻底重新构建，包括图片及其所有附件)
 func RebuildAll(sitePath string) {
 	fileList, _ := filepath.Glob(sitePath + "\\complied\\*")
 	for k := range fileList {
-		/*		if !(filepath.Base(fileList[k]) == "style" || filepath.Base(fileList[k]) == "setting" || filepath.Base(fileList[k]) == ".git" || filepath.Base(fileList[k]) == ".git") {
-				os.RemoveAll(fileList[k])
-			}*/
-		if Exist(fileList[k] + "\\index.html") {
+		if strings.Contains("tags|posts|archives", filepath.Base(fileList[k])) || Exist(fileList[k]+"\\index.html") && filepath.Base(fileList[k]) != "style" {
 			os.RemoveAll(fileList[k])
 		}
 	}
-	Complie(sitePath, false)
+	Build(sitePath, false)
 }
 
 func NewSite(siteName string) {
@@ -123,17 +146,23 @@ func NewSite(siteName string) {
 				log.Fatal("该目录存在于站点同名的文件或文件夹，请检查")
 			}
 		} else {
-			fileData, _ := ioutil.ReadFile(".\\" + siteName)
+			fileData, err := ioutil.ReadFile(".\\" + siteName)
+			if err != nil {
+				log.Fatal("站点配置文件读取失败")
+			}
 			os.Remove(".\\" + siteName)
 			sitesRoot := SitesRoot("")
 			sitePath := sitesRoot + "\\" + siteName
-			err := os.MkdirAll(sitePath+"\\complied", os.ModePerm)
+			err = os.MkdirAll(sitePath+"\\complied", os.ModePerm)
 			if err != nil {
 				ioutil.WriteFile(".\\"+siteName, fileData, os.ModePerm)
 				panic(err)
 				log.Fatal(sitePath + "目录创建失败。")
 			}
-			ioutil.WriteFile(".\\"+siteName+"\\complied\\setting", fileData, os.ModePerm)
+			err = ioutil.WriteFile(sitePath+"\\complied\\setting", fileData, os.ModePerm)
+			if err != nil {
+				log.Fatal(err)
+			}
 			// ioutil.WriteFile(".\\"+siteName, fileData, os.ModePerm)
 			CopyDir(".\\themes\\default", sitePath+"\\complied\\style")
 		}
@@ -274,10 +303,12 @@ func QuickPost(sitePath string, logType string, title string) {
 		if err != nil {
 			log.Fatal(logPath + "写入元数据失败")
 		}
-		cmd := exec.Command("explorer.exe", "/select,"+file)
+		args := strings.Fields(file)
+		args[0] = "/select," + args[0]
+		cmd := exec.Command("explorer.exe", args...)
+		// log.Println("explorer.exe", args)
 		cmd.Run()
 	} else {
 		log.Fatal(logPath + "日志创建失败")
 	}
-
 }

@@ -134,7 +134,6 @@ func GetCreationTime(fi os.FileInfo) int64 {
 	return CreationTime
 }
 
-//global var : SiteInfo
 func _decode_album(src string) (Album, Album) {
 	photoList, _ := filepath.Glob(src + "\\*")
 	var album Album
@@ -206,7 +205,7 @@ func _decode_album(src string) (Album, Album) {
 		//追加图片信息
 		var photo = Photo{Src: fullFileName, Comment: comment_str, Width: imgInfo.Width, Height: imgInfo.Height, PhotoFileName: photoFileName, OriginPhotoFileName: originPhotoFileName}
 		album = append(album, photo)
-		if strings.HasPrefix(filepath.Base(fullFileName), "*") {
+		if strings.HasPrefix(filepath.Base(fullFileName), "~") {
 			albumSummary = append(albumSummary, photo)
 		}
 

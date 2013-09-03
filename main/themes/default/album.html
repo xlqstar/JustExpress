@@ -9,9 +9,11 @@
 	<link rel="alternate" href="/atom.xml" title="{{.SiteInfo.Site}}" type="application/atom+xml">
 	<!--[if lt IE 9]><script src="././js/html5.js"></script><![endif]-->
 	<link rel="stylesheet" href="././css/style.css" type="text/css" media="screen" /> 
+	<link rel="stylesheet" href="././css/lightbox.css" type="text/css" media="screen" /> 
 	<link rel="shortcut icon" type="image/png" href="././images/favico.ico" />
 	<script type="text/javascript" src="././js/jquery.js"></script>
 	<script type="text/javascript" src="././js/main.js"></script>
+	<script type="text/javascript" src="././js/lightbox-2.6.min.js"></script>
 </head>
 
 <body>
@@ -24,13 +26,15 @@
 			<div class="article_meta">
 				<span>by</span>
 				{{$.SiteInfo.Author}}
-				<span>on</span>{{.LogInfo.Date.Format " Jan 2 2006"}}
+				<span>on</span>
+				{{.LogInfo.Date.Format " Jan 2 2006"}}
 				<span>with</span>
 				<a href="././posts/{{.LogInfo.Permalink}}/index.html#comments">Comments</a>
 			</div>
 			<div class="text">
 				{{range .LogInfo.Log}}
-				<p><img src="{{.PhotoFileName}}" /></p>
+				<p><a href="{{.OriginPhotoFileName}}" data-lightbox="album"><img src="{{.PhotoFileName}}" /></a></p>
+				{{if .HasComment}}<p style="text-align:center;margin-top:-15px">[{{.Comment}}]</p>{{end}}
 				{{end}}
 			</div>
 			<div class="big_sep"></div>
