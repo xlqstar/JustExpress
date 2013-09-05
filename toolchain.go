@@ -16,17 +16,17 @@ import (
 )
 
 func GetSitePath(siteName string) string {
-	sitesRoot := SitesRoot("")
+	siteRoot := SiteRoot("")
 	if len(siteName) == 0 {
 		var sitesArry []string
-		fileList, _ := filepath.Glob(sitesRoot + "\\*")
+		fileList, _ := filepath.Glob(siteRoot + "\\*")
 		for k := range fileList {
 			if Exist(fileList[k] + "\\complied\\setting") {
 				sitesArry = append(sitesArry, fileList[k])
 			}
 		}
 		if len(sitesArry) == 0 {
-			fmt.Println("站点根目录不存在任何站点，请通过`newsite`创建站点，或通过`switchsitesroot`命令更换站点根目录路径，通过`just -h`命令可以获取帮助。")
+			fmt.Println("站点根目录不存在任何站点，请通过`newsite`创建站点，或通过`siteroot`命令更换站点根目录路径，通过`just -h`命令可以获取帮助。")
 			os.Exit(0)
 		} else if len(sitesArry) == 1 {
 			fmt.Println()
@@ -60,7 +60,7 @@ func GetSitePath(siteName string) string {
 		}
 	}
 
-	sitePath := sitesRoot + "\\" + siteName
+	sitePath := siteRoot + "\\" + siteName
 	if !Exist(sitePath + "\\complied\\setting") {
 		log.Fatal(sitePath + "\\complied\\setting" + "站点目录结构不符合预期，有异常！确定站点标识输入是否错误！？")
 	} else {
@@ -126,7 +126,7 @@ func RebuildAll(sitePath string) {
 func NewSite(siteName string) {
 
 	if !Exist(siteName) {
-		dataBytes, _ := ioutil.ReadFile("data")
+		dataBytes, _ := ioutil.ReadFile(".\\setting")
 		reg, _ := regexp.Compile(`#===站点默认配置[\s\S]*#===//站点默认配置`)
 
 		content := string(reg.Find(dataBytes))
@@ -151,8 +151,8 @@ func NewSite(siteName string) {
 				log.Fatal("站点配置文件读取失败")
 			}
 			os.Remove(".\\" + siteName)
-			sitesRoot := SitesRoot("")
-			sitePath := sitesRoot + "\\" + siteName
+			siteRoot := SiteRoot("")
+			sitePath := siteRoot + "\\" + siteName
 			err = os.MkdirAll(sitePath+"\\complied", os.ModePerm)
 			if err != nil {
 				ioutil.WriteFile(".\\"+siteName, fileData, os.ModePerm)
@@ -170,20 +170,20 @@ func NewSite(siteName string) {
 
 }
 
-func SitesRoot(sitesRoot string) string {
-	if len(sitesRoot) == 0 {
-		config := Configure(".\\data")
-		sitesRoot = config.GetStr("SitesRoot")
-		return sitesRoot
+func SiteRoot(siteRoot string) string {
+	if len(siteRoot) == 0 {
+		config := Configure(".\\setting")
+		siteRoot = config.GetStr("SiteRoot")
+		return siteRoot
 	} else {
-		if !Exist(sitesRoot) {
+		if !Exist(siteRoot) {
 			log.Fatal("站点根目录不存在")
 		}
 
-		configData, _ := ioutil.ReadFile(".\\data")
-		reg, _ := regexp.Compile("(SitesRoot\\s*:\\s*).*")
-		configData = reg.ReplaceAll(configData, []byte("${1}"+sitesRoot))
-		err := ioutil.WriteFile("data", configData, os.ModePerm)
+		configData, _ := ioutil.ReadFile(".\\setting")
+		reg, _ := regexp.Compile("(SiteRoot\\s*:\\s*).*")
+		configData = reg.ReplaceAll(configData, []byte("${1}"+siteRoot))
+		err := ioutil.WriteFile(".\\setting", configData, os.ModePerm)
 		if err != nil {
 			return "true"
 		}

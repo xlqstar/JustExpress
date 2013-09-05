@@ -38,7 +38,7 @@ func Build(siteDirPath string, onlyRebuildHtml bool) {
 
 	siteInfo.ThemeName = themeCfg.GetStr("ThemeName")
 	siteInfo.ImgWidth = themeCfg.GetInt("ImgWidth")
-	siteInfo.OriginImgWidth = themeCfg.GetInt("OriginImgWidth")
+	siteInfo.BigImgWidth = themeCfg.GetInt("BigImgWidth")
 
 	siteInfo.SitePath = siteDirPath
 

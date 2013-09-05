@@ -5,7 +5,7 @@ ThemeName:		default
 ImgWidth:		616
 
 #大图宽度(相册等大图浏览模式下的适配宽度，若主题没有大图显示功能则可以设置为0，单位：像素)
-OriginImgWidth:	1000
+BigImgWidth:	1000
 
 #作者信息
 Author:			xlqstar@gmail.com

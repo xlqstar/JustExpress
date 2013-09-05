@@ -27,7 +27,7 @@ Usage:
 	just [-site <site_name>] switchtheme [<theme_name>]
 	just [-site <site_name>] resize
 	just [-site <site_name>] preview
-	just [-site <site_name>] sitesroot [<sites_root_path>]
+	just [-site <site_name>] siteroot [<site_root_path>]
 
 PS:
 	log_type: album | article
@@ -55,14 +55,14 @@ func main() {
 			}
 			just.NewSite(args[1])
 			return
-		} else if args[0] == "sitesroot" {
+		} else if args[0] == "siteroot" {
 			if len(args) == 1 {
 				fmt.Println()
-				fmt.Println("当前站点根路径：" + just.SitesRoot(""))
+				fmt.Println("当前站点根路径：" + just.SiteRoot(""))
 				fmt.Println()
-				fmt.Println("您可以通过 just [-site <site_name>] switchsitesroot <sites_root_path> 命令可以更改该路径，也可以直接修改data文件。")
+				fmt.Println("您可以通过 just [-site <site_name>] siteroot <site_root_path> 命令可以更改该路径，也可以直接修改data文件。")
 			} else if len(args) == 2 {
-				just.SitesRoot(args[1])
+				just.SiteRoot(args[1])
 			} else {
 				argumentErr()
 			}
