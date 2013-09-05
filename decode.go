@@ -194,16 +194,16 @@ func _decode_album(src string) (Album, Album) {
 		}
 		photo_fi.Close()
 
-		var originPhotoFileName, photoFileName string
+		var bigPhotoFileName, photoFileName string
 		photoFileName = filepath.Base(fullFileName)
 		if strings.ToLower(path.Ext(fullFileName)) == ".gif" || imgInfo.Width < siteInfo.ImgWidth { //global var : SiteInfo
-			originPhotoFileName = photoFileName
+			bigPhotoFileName = photoFileName
 		} else {
-			originPhotoFileName = "origin_" + photoFileName
+			bigPhotoFileName = "big_" + photoFileName
 		}
 
 		//追加图片信息
-		var photo = Photo{Src: fullFileName, Comment: comment_str, Width: imgInfo.Width, Height: imgInfo.Height, PhotoFileName: photoFileName, OriginPhotoFileName: originPhotoFileName}
+		var photo = Photo{Src: fullFileName, Comment: comment_str, Width: imgInfo.Width, Height: imgInfo.Height, PhotoFileName: photoFileName, BigPhotoFileName: bigPhotoFileName}
 		album = append(album, photo)
 		if strings.HasPrefix(filepath.Base(fullFileName), "~") {
 			albumSummary = append(albumSummary, photo)

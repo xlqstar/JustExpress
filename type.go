@@ -9,12 +9,12 @@ import (
 
 //图片
 type Photo struct {
-	Src                 string
-	PhotoFileName       string
-	OriginPhotoFileName string
-	Comment             string
-	Width               int
-	Height              int
+	Src              string
+	PhotoFileName    string
+	BigPhotoFileName string
+	Comment          string
+	Width            int
+	Height           int
 }
 
 //相册
@@ -99,9 +99,9 @@ type SiteInfo struct {
 	Socials   map[string]string
 	PageSize  int
 
-	ImgWidth       int
-	OriginImgWidth int
-	ThemeName      string
+	ImgWidth    int
+	BigImgWidth int
+	ThemeName   string
 
 	GlobalTpl map[string]string
 }

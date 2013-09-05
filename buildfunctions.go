@@ -123,7 +123,7 @@ func Build_log(logPage LogPage, tplDirPath string, destDirPath string, onlyRebui
 func build_album(logPage LogPage, tplDirPath string, destLogDir string, onlyRebuildHtml bool) {
 	destAlbumDir := destLogDir
 	smallImgWidth := logPage.SiteInfo.ImgWidth
-	bigImgWidth := logPage.SiteInfo.OriginImgWidth
+	bigImgWidth := logPage.SiteInfo.BigImgWidth
 
 	logPage.LogInfo.Log, _ = _decode_album(logPage.LogInfo.Src)
 	for k, photo := range logPage.LogInfo.Log.(Album) {
@@ -131,29 +131,29 @@ func build_album(logPage LogPage, tplDirPath string, destLogDir string, onlyRebu
 		destPhotoFullFileName := strings.Replace(srcPhotoFullFileName, logPage.LogInfo.Src, destAlbumDir, -1)
 		photoFileName := photo.PhotoFileName
 		photoWidth := photo.Width
-		var originPhotoFullFileName string
+		var bigPhotoFullFileName string
 		if strings.ToLower(path.Ext(photoFileName)) == ".gif" || photoWidth < smallImgWidth {
-			originPhotoFullFileName = destPhotoFullFileName
+			bigPhotoFullFileName = destPhotoFullFileName
 			if !onlyRebuildHtml {
 				CopyFile(srcPhotoFullFileName, destPhotoFullFileName)
 			}
 		} else if photoWidth > bigImgWidth {
-			originPhotoFullFileName = strings.Replace(destPhotoFullFileName, photoFileName, "origin_"+photoFileName, -1)
+			bigPhotoFullFileName = strings.Replace(destPhotoFullFileName, photoFileName, "big_"+photoFileName, -1)
 			if !onlyRebuildHtml {
 				Resize(srcPhotoFullFileName, destPhotoFullFileName, uint(smallImgWidth))
-				if siteInfo.OriginImgWidth > 0 {
-					Resize(srcPhotoFullFileName, originPhotoFullFileName, uint(bigImgWidth))
+				if siteInfo.BigImgWidth > 0 {
+					Resize(srcPhotoFullFileName, bigPhotoFullFileName, uint(bigImgWidth))
 				}
 			}
 		} else if photoWidth > smallImgWidth {
-			originPhotoFullFileName = strings.Replace(destPhotoFullFileName, photoFileName, "origin_"+photoFileName, -1)
+			bigPhotoFullFileName = strings.Replace(destPhotoFullFileName, photoFileName, "big_"+photoFileName, -1)
 			if !onlyRebuildHtml {
 				Resize(srcPhotoFullFileName, destPhotoFullFileName, uint(smallImgWidth))
-				CopyFile(srcPhotoFullFileName, originPhotoFullFileName)
+				CopyFile(srcPhotoFullFileName, bigPhotoFullFileName)
 			}
 		}
 
-		photo.OriginPhotoFileName = filepath.Base(originPhotoFullFileName)
+		photo.BigPhotoFileName = filepath.Base(bigPhotoFullFileName)
 		logPage.LogInfo.Log.(Album)[k] = photo
 	}
 	makeHTML(&logPage, destAlbumDir+"\\index.html", tplDirPath+"\\album.html")
