@@ -64,6 +64,7 @@ em{font-family:"Emphasis",STKaiti,Kai,Kaiti,serif;font-style:normal;}
 .article .text ul,.article .text ol{margin:5px 0 21px 40px;}
 .article .text li{margin:2px 0;}
 .article .text img{display:block;margin:0 auto;max-width:570px;border:5px white solid;-webkit-box-shadow:0 1px 3px #333;-moz-box-shadow:0 1px 3px #333;box-shadow:0 1px 3px #333;text-align:center;}
+.article .text iframe{text-align: center;display:block;margin:0 auto;}
 .article pre{overflow-x:auto;margin:10px;padding:12px;border:1px solid #CDCDCD;border-radius:3px;background:white;box-shadow:0 1px 0 #ffffff,0 1px 3px rgba(0, 0, 0, 0.1) inset;color:black;white-space:pre;word-wrap:normal;font:12px/1.5 Monaco,monospace;}
 .article code{text-shadow:none;font-size:14px;font-family:'Monaco','monospace';}
 .article .share{float:right;}

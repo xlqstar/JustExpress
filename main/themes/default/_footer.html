@@ -5,21 +5,21 @@
 			<h2>Archives</h2>
 			<ul>
 				{{range .Archives}}
-				<li><a href="././archives/index.html#{{.YearMonth}}">{{.YearMonth}}</a></li>
+				<li><a href="././archives/index.html#{{.YearMonth}}" target="_blank">{{.YearMonth}}</a></li>
 				{{end}}
 			</ul>
 		</div>
 		<div class="tag_cloud col">
 			<h2>Tag Cloud</h2>
 			{{range .Tags}}
-			<a class="tag" href="././tags/{{.Alias}}.html">{{.Name}}({{.Count}})</a>
+			<a class="tag" href="././tags/{{.Alias}}.html" target="_blank">{{.Name}}({{.Count}})</a>
 			{{end}}
 		</div>
 		<div class="links col">
 			<h2>Links</h2>
 			<ul>
 				{{range .Links}}
-				<li><a href="{{.Href}}">{{.Name}}</a></li>
+				<li><a href="{{.Href}}" target="_blank">{{.Name}}</a></li>
 				{{end}}
 			</ul>
 		</div>

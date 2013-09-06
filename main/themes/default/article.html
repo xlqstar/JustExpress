@@ -8,11 +8,10 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 	<link rel="alternate" href="/atom.xml" title="{{.SiteInfo.Site}}" type="application/atom+xml">
 	<!--[if lt IE 9]><script src="././js/html5.js"></script><![endif]-->
-	<link rel="stylesheet" href="././css/style.css" type="text/css" media="screen" /> 
+	<link rel="stylesheet" href="././css/style.css" type="text/css" media="screen" />
+	<link rel="stylesheet" href="././css/lightbox.css" type="text/css" media="screen" />
 	<link rel="icon" type="image/png" href="././images/favico.ico" type="image/x-icon" />
 	<link rel="shortcut icon" type="image/png" href="././images/favico.ico" type="image/x-icon" />
-	<script type="text/javascript" src="././js/jquery.js"></script>
-	<script type="text/javascript" src="././js/main.js"></script>
 </head>
 
 <body>
@@ -63,6 +62,11 @@
 		</a>
 		{{end}}
 	</nav>
-	
+	<script type="text/javascript" src="././js/jquery.js"></script>
+	<script type="text/javascript" src="././js/main.js"></script>
+	<script type="text/javascript">
+		$(".article .text p img").wrap(function(i){return "<a href=\""+this.src+"\" title=\""+this.alt+"\" data-lightbox=\"article\"></a>";}).parent().after(function(i){return "<div style=\"text-align:center\">["+this.title+"]</div>"})
+	</script>
+	<script type="text/javascript" src="../../style/js/lightbox-2.6.min.js"></script>
 </body>
 </html>
