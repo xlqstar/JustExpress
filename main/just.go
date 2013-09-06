@@ -27,6 +27,7 @@ Usage:
 	just [-site <site_name>] switchtheme [<theme_name>]
 	just [-site <site_name>] resize
 	just [-site <site_name>] preview
+	just [-site <site_name>] open
 	just [-site <site_name>] siteroot [<site_root_path>]
 
 PS:
@@ -209,6 +210,11 @@ func main() {
 	case "preview":
 		// sitePath := just.GetSitePath(*siteName)
 		cmd := exec.Command("rundll32", "url.dll,FileProtocolHandler", sitePath+"\\complied\\index.html")
+		cmd.Run()
+	case "open":
+		paths := strings.Fields(sitePath)
+		cmd := exec.Command("explorer.exe", paths...)
+		// log.Println("explorer.exe", paths)
 		cmd.Run()
 	}
 }
