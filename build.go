@@ -219,27 +219,29 @@ func Build(siteDirPath string, onlyRebuildHtml bool) {
 		}
 
 		//判断该分类下的日志是否有变动(添加日志或修改日志)
-		if !haveUpdated {
-			if category.Count == 0 {
+		if category.Count == 0 {
+			if !haveUpdated {
 				if !Exist(categoryDirPath + "\\index.html") {
 					haveUpdated = true
 				}
-			} else if category.Count > 0 {
-				//剔出该分类下的日志列表
-				for _, logInfo := range logList {
-					if strings.Contains(logInfo.MetaData["category"], category.Name) || logInfo.Type == category.Alias {
-						_logList = append(_logList, logInfo)
-					}
+			}
+		} else if category.Count > 0 {
+			//剔出该分类下的日志列表
+			for _, logInfo := range logList {
+				if strings.Contains(logInfo.MetaData["category"], category.Name) || logInfo.Type == category.Alias {
+					_logList = append(_logList, logInfo)
 				}
+			}
+			if !haveUpdated {
 				for _, logInfo := range _logList {
 					if In_array(logInfo.Title, updatedLogList) /* || !Exist(categoryDirPath) */ {
 						haveUpdated = true
 						break
 					}
 				}
-			} else {
-				continue
 			}
+		} else {
+			continue
 		}
 
 		indexPage.LogList = _logList
@@ -279,19 +281,21 @@ func Build(siteDirPath string, onlyRebuildHtml bool) {
 			}
 		}
 		//如果没有日志关联到该分类下
-		if !haveUpdated {
-			if tag.Count == 0 {
+		if tag.Count == 0 {
+			if !haveUpdated {
 				if !Exist(tagPagePath) {
 					haveUpdated = true
 				}
-			} else if tag.Count > 0 {
-				//选出关联至该标签的日志列表
-				for _, logInfo := range logList {
-					//如果关联到该标签并且有修改或是新创建日志
-					if strings.Contains(logInfo.MetaData["tag"], tag.Name) {
-						_logList = append(_logList, logInfo)
-					}
+			}
+		} else if tag.Count > 0 {
+			//选出关联至该标签的日志列表
+			for _, logInfo := range logList {
+				//如果关联到该标签并且有修改或是新创建日志
+				if strings.Contains(logInfo.MetaData["tag"], tag.Name) {
+					_logList = append(_logList, logInfo)
 				}
+			}
+			if !haveUpdated {
 				//判断该分类下的日志是否有变动(添加日志或修改日志)
 				for _, logInfo := range _logList {
 					if In_array(logInfo.Title, updatedLogList) /* || !Exist(tagPagePath)*/ {
@@ -299,9 +303,9 @@ func Build(siteDirPath string, onlyRebuildHtml bool) {
 						break
 					}
 				}
-			} else {
-				continue
 			}
+		} else {
+			continue
 		}
 
 		tagPage.LogList = _logList
