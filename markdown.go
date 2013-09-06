@@ -1,10 +1,10 @@
-//markdown解析函数
-
 package just
 
 import (
+	//"bytes"
+	// "github.com/knieriem/markdown"
 	//. "github.com/russross/blackfriday"
-	. "github.com/wendal/blackfriday"
+	. "github.com/xlqstar/blackfriday"
 	"log"
 	"regexp"
 	"strings"
@@ -23,25 +23,7 @@ var (
 
 var navRegex = regexp.MustCompile(`(?ismU)<nav>(.*)</nav>`)
 
-/*func main() {
-	str := `Maruku allows you to write in an easy-to-read-and-write syntax, like this:
-
-> [This document in Markdown][this_md]
-
-Then it can be translated to HTML:
-
-> [This document in HTML][this_html]
-
-or LaTeX, which is then converted to PDF:
-
-> [This doc
-`
-
-	fmt.Println(MarkdownToHtml(str))
-
-}*/
-
-func MarkdownToHtml(content string) (str string) {
+func MarkdownToHtml(content string, ifSummary bool) (str string) {
 	defer func() {
 		e := recover()
 		if e != nil {
@@ -78,6 +60,9 @@ func MarkdownToHtml(content string) (str string) {
 	extensions |= EXTENSION_AUTOLINK
 	extensions |= EXTENSION_STRIKETHROUGH
 	extensions |= EXTENSION_SPACE_HEADERS
+	if ifSummary {
+		extensions |= EXTENSION_CONTENT_TO_SUMMARY
+	}
 
 	str = string(Markdown([]byte(content), renderer, extensions))
 

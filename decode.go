@@ -93,11 +93,7 @@ func decode_article(src string) LogInfo {
 	if fileInfo.IsDir() {
 		src = src + "\\article.md"
 	}
-	var summary Article
-	_, summary, articleInfo.MetaData = _decode_article(src)
-	if len(string(summary)) > 0 {
-		articleInfo.Summary = summary
-	}
+	_, articleInfo.MetaData = _decode_article(src)
 	articleInfo.Src = src
 	articleInfo.Type = "article"
 	return articleInfo
@@ -213,18 +209,14 @@ func _decode_album(src string) (Album, Album) {
 	return album, albumSummary
 }
 
-func _decode_article(src string) (Article, Article, map[string]string) {
+func _decode_article(src string) (Article, map[string]string) {
 	//获取元数据
 	fi, err := ioutil.ReadFile(src)
 	if err != nil {
 		panic(err)
 	}
 	metaData, content := decode_meta(string(fi))
-	index := strings.Index(content, "\n<!--more-->")
-	if index < 0 {
-		index = 0
-	}
-	return Article(content), Article(content[0:index]), metaData
+	return Article(content), metaData
 }
 
 func decode_meta(content string) (map[string]string, string) {

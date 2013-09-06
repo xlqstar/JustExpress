@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/wendal/gor"
 	"io/ioutil"
 	"log"
 	"math"
@@ -72,17 +71,14 @@ func Build_index(indexPage IndexPage, tplDirPath string, destDirPath string) {
 func build_index_page(indexPage IndexPage, tplDirPath string, destDirPath string) {
 	for k, v := range indexPage.LogList {
 
-		if v.Summary == nil || v.Summary == "" {
-			if v.Type == "article" {
-				content, _, _ := _decode_article(v.Src)
-				indexPage.LogList[k].Summary = gor.MarkdownToHtml(string(content))
-			} else if v.Type == "album" {
-				indexPage.LogList[k].Summary, _ = _decode_album(v.Src)
-			}
-		} else {
-			if v.Type == "article" {
-				indexPage.LogList[k].Summary = gor.MarkdownToHtml(string(v.Summary.(Article)))
-			}
+		if v.Type == "article" {
+			content, _ := _decode_article(v.Src)
+			content_str := strings.Replace(string(content), "]: ./", "]: ./posts/"+v.Permalink+"/", -1)
+			indexPage.LogList[k].Summary = MarkdownToHtml(content_str, true)
+		}
+
+		if (v.Summary == nil || v.Summary == "") && v.Type == "album" {
+			indexPage.LogList[k].Summary, _ = _decode_album(v.Src)
 		}
 	}
 
@@ -172,8 +168,8 @@ func build_article(logPage LogPage, tplDirPath string, destLogDir string, onlyRe
 			CopyFile(logPage.LogInfo.Src, destArticleDir+"\\article.md")
 		}
 	}
-	content, _, _ := _decode_article(logPage.LogInfo.Src)
-	logPage.LogInfo.Log = gor.MarkdownToHtml(string(content))
+	content, _ := _decode_article(logPage.LogInfo.Src)
+	logPage.LogInfo.Log = MarkdownToHtml(string(content), false)
 	makeHTML(&logPage, destArticleDir+"\\index.html", tplDirPath+"\\article.html")
 }
 
