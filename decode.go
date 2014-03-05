@@ -1,12 +1,12 @@
 //日志数据解析函数集
 
-package just
+package justExpress
 
 import (
 	"fmt"
 	"github.com/axgle/mahonia"
 	"github.com/rwcarlsen/goexif/exif"
-	"github.com/xlqstar/Just/pinyin"
+	"github.com/xlqstar/JustExpress/pinyin"
 	"image"
 	"image/gif"
 	"image/jpeg"

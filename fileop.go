@@ -1,6 +1,6 @@
 //文件操作函数集
 
-package just
+package justExpress
 
 import (
 	"io"

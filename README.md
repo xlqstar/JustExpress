@@ -23,7 +23,7 @@ Just静态blog编译引擎是我好几年前就一直在构思的作品，因为
 
 这些条件，我决定学习一门新语言，那就是golang，目前为止，golang一直没有让我失望，绝对gelivable。这里要先感谢下《Go Web编程 交流群》里的各位高手大侠们的不吝赐教，尤其是**@谢大，@无闻、@小伟、@喻恒春、@膘叔、@slene、@lunny、@paul young**这些帮助过我的人，还有google-nuts里的好多位热心帮助我的国际友人**Kyle Lemons**。对了，其中还参考wendal大神的gor项目源码，在一周的熟悉后便开始了新的Just攻坚战。
 
-接下来就是苦逼兮兮的两个月，还没夏天开始写，一直写到夏天快过去，中间出去嵊泗岛旅了个游，本想放松一把结果还急性肠胃炎了一回，发烧、关节痛、咳嗽至今，还有老婆老在我旁边看无聊综艺各种骚扰，还有谢大的鼓励催促作为支撑，此处省略10万字……
+接下来就是苦逼兮兮的两个月，从还没夏天开始，一直写到夏天快过去，中间出去嵊泗岛旅了个游，本想放松一把结果还急性肠胃炎了一回，发烧、关节痛、咳嗽至今，还有老婆老在我旁边看无聊综艺各种骚扰，还有谢大的鼓励催促作为支撑，此处省略10万字……
 
 不管怎么说今天终于写完了，屁话讲了一大堆，目的有二，一方面是给大家讲述Just诞生的背景，可以加深大家对Just应用场景的理解，从而做出你更为理性的选择，另一方面是为了感谢下为我提供过帮助的人，祝你们一生幸福，再一方面是得瑟一下我有多么不容易o(∩_∩)o，装一下逼，还请见谅……
 
@@ -79,7 +79,7 @@ Just静态blog编译引擎是我好几年前就一直在构思的作品，因为
     tags:           js|arduino|php
     
     #友情链接
-    links:          你的眼我的心 @ http://www.baidu.com   | 哇哈哈的博客 @ http://log.sdf.com
+    links:          笑嘻嘻的博客 @ http://www.baidu.com   | 哇哈哈的博客 @ http://log.sdf.com
     
     #站点名称(例如：liqun.me)
     site:           liqun.me
@@ -142,9 +142,13 @@ Just静态blog编译引擎是我好几年前就一直在构思的作品，因为
 +  **命令**：` just [-site <site_name>] resize`
 +  **PS**：这个命令通常在更换主题后，原图片大小跟新主题不符合，风格脱离严重，则进行resize，实际上是删除所有相册型日志，重新生成。图多，或这图大，会导致resize进程缓慢，千万耐心等待一小会儿。
 
-预览
-------------------
+打开站点目录
+-----------------
++  **命令**：`just [-site <site_name>] open`
++  **PS**：这个命令用于打开资源管理器并且定位至站点目录，方便一些手动操作。
 
+预览：
+------------------
 +  **命令**：`just [-site <site_name>] preview`
 +  **PS**：这需要我解释什么吗？
 
@@ -155,8 +159,18 @@ Just静态blog编译引擎是我好几年前就一直在构思的作品，因为
 
 二、源码下载安装
 ==================
-未完待续……
++  **获取源码**：
+`go get github.com/xlqstar/JustExpress`
 
++  **获取依赖**：  
+markdown模块：`go get github.com/xlqstar/blackfriday`  
+图片resize模块：`go get github.com/nfnt/resize`  
+图片exif解析模块：`go get github.com/rwcarlsen/goexif`  
+字符串编码转换：`go get github.com/axgle/mahonia`
+
++  **生成版本**：
++ **命令**：`go build src\github.com\xlqstar\Just\main\just.go`，
++ **PS**：`src\github.com\xlqstar\Just\main\`中除just.go本身之外，就是所有相关文件了，可以自行打包了。
 
   [1]: http://farbox.com/
   [2]: http://liqun.me/posts/guan-yu-just-de-gu-shi-ji-shi-yong-zhi-nan/just.zip

@@ -1,6 +1,6 @@
 //just主要入口函数，负责编译日志
 
-package just
+package justExpress
 
 func eq(a interface{}, b interface{}) bool {
 	if a == b {

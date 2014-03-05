@@ -1,6 +1,6 @@
 //日志生成函数集
 
-package just
+package justExpress
 
 import (
 	"bytes"

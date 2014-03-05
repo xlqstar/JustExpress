@@ -1,6 +1,6 @@
 //just工具链
 
-package just
+package justExpress
 
 import (
 	"fmt"
@@ -179,7 +179,7 @@ func SiteRoot(siteRoot string) string {
 		if !Exist(siteRoot) {
 			log.Fatal("站点根目录不存在")
 		}
-
+		siteRoot = strings.TrimRight(siteRoot, "\\/")
 		configData, _ := ioutil.ReadFile(".\\setting")
 		reg, _ := regexp.Compile("(SiteRoot\\s*:\\s*).*")
 		configData = reg.ReplaceAll(configData, []byte("${1}"+siteRoot))
@@ -290,25 +290,53 @@ func QuickPost(sitePath string, logType string, title string) {
 	if len(metadata) > 0 {
 		metadata = "---\n" + metadata + "---\n"
 	}
-	logPath := sitePath + "\\" + title + "@" + time.Now().Format("2006-1-2")
-	err := os.Mkdir(logPath, os.ModePerm)
-	if err == nil {
-		var file string
-		if logType == "album" {
-			file = logPath + "\\meta"
+	if logType == "album" || logType == "_album" {
+		logPath := sitePath + "\\" + title + "@" + time.Now().Format("2006-1-2")
+		err := os.Mkdir(logPath, os.ModePerm)
+		if err == nil {
+			file := logPath + "\\meta"
+			err = ioutil.WriteFile(file, []byte(metadata), os.ModePerm)
+			if err != nil {
+				log.Fatal(logPath + "写入元数据失败")
+			}
+			if logType == "album" {
+				args := strings.Fields(file)
+				args[0] = "/select," + args[0]
+				cmd := exec.Command("explorer.exe", args...)
+				cmd.Run()
+			}
 		} else {
-			file = logPath + "\\article.md"
+			log.Fatal(logPath + "日志创建失败")
 		}
-		err = ioutil.WriteFile(file, []byte(metadata), os.ModePerm)
+	} else if logType == "article" || logType == "_article" {
+		logPath := sitePath + "\\" + title + "@" + time.Now().Format("2006-1-2") + ".md"
+		err := ioutil.WriteFile(logPath, []byte(metadata), os.ModePerm)
 		if err != nil {
 			log.Fatal(logPath + "写入元数据失败")
 		}
-		args := strings.Fields(file)
-		args[0] = "/select," + args[0]
-		cmd := exec.Command("explorer.exe", args...)
-		// log.Println("explorer.exe", args)
-		cmd.Run()
-	} else {
-		log.Fatal(logPath + "日志创建失败")
+		if logType == "article" {
+			args := strings.Fields(logPath)
+			args[0] = "/select," + args[0]
+			cmd := exec.Command("explorer.exe", args...)
+			cmd.Run()
+		}
+	} else if logType == "article_folder" || logType == "_article_folder" {
+		logPath := sitePath + "\\" + title + "@" + time.Now().Format("2006-1-2")
+		err := os.Mkdir(logPath, os.ModePerm)
+		if err == nil {
+			file := logPath + "\\article.md"
+			err = ioutil.WriteFile(file, []byte(metadata), os.ModePerm)
+			if err != nil {
+				log.Fatal(logPath + "写入元数据失败")
+			}
+			if logType == "article_folder" {
+				args := strings.Fields(file)
+				args[0] = "/select," + args[0]
+				cmd := exec.Command("explorer.exe", args...)
+				cmd.Run()
+			}
+		} else {
+			log.Fatal(logPath + "日志创建失败")
+		}
 	}
 }

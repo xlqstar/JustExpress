@@ -1,6 +1,6 @@
 //图像操作函数集
 
-package just
+package justExpress
 
 import (
 	"github.com/nfnt/resize"

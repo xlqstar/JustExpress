@@ -1,9 +1,9 @@
 //配置文件解析函数集
 
-package just
+package justExpress
 
 import (
-	"github.com/xlqstar/Just/pinyin"
+	"github.com/xlqstar/JustExpress/pinyin"
 	"io/ioutil"
 	"log"
 	"net/url"

@@ -1,6 +1,6 @@
 //各种类的定义汇集地
 
-package just
+package justExpress
 
 import (
 	"strconv"

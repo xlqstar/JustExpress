@@ -1,6 +1,6 @@
 //解析当前日志所属类型（相册型、文章型）
 
-package just
+package justExpress
 
 import (
 	"os"
