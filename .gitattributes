@@ -1,2 +1,5 @@
 # Disable LF normalization for all files
 * -text
+
+*.exe  binary
+*.link binary
