@@ -24,17 +24,17 @@ func (config Config) GetInt(key string) int {
 
 func (config Config) GetStr(key string) string {
 	key = strings.ToLower(key)
-	if config[key] == "" {
-		log.Fatal(key + "值未填写或填写不正确")
-	}
 	return config[key]
 }
 
 func (config Config) GetArray(key string) []string {
+	var array []string
 	key = strings.ToLower(key)
 	value := config.GetStr(key)
-	array := strings.Split(value, "|")
-	return array
+	if strings.TrimSpace(value) == "" {
+		return array
+	}
+	return strings.Split(value, "|")
 }
 
 func Configure(filePath string) Config {
@@ -156,7 +156,7 @@ func GetSocials(socials []string) map[string]string {
 	for _, socialStr := range socials {
 		socialArry := strings.SplitN(strings.TrimSpace(socialStr), "@", 2)
 		if len(socialArry) != 2 {
-			log.Fatal(socialStr + "友情连接配置不完整，可能未配置相应连接！")
+			log.Fatal(socialStr + "社交账号配置不完整，可能未配置相应连接！")
 		}
 		socialSet[strings.ToLower(strings.TrimSpace(socialArry[0]))] = strings.TrimSpace(socialArry[1])
 	}
