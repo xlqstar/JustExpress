@@ -324,7 +324,7 @@ func QuickPost(sitePath string, logType string, title string) {
 		logPath := sitePath + "\\" + title + "@" + time.Now().Format("2006-1-2")
 		err := os.Mkdir(logPath, os.ModePerm)
 		if err == nil {
-			file := logPath + "\\article.md"
+			file := logPath + "\\" + title + "@" + time.Now().Format("2006-1-2") + ".md"
 			err = ioutil.WriteFile(file, []byte(""), os.ModePerm)
 			if err != nil {
 				log.Fatal(logPath + "写入元数据失败")

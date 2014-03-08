@@ -89,7 +89,7 @@ func decode_article(src string) LogInfo {
 	fileInfo, _ := os.Stat(src)
 	articleInfo.LastModTime = TimeStamp(getLastModTime(fileInfo))
 	if fileInfo.IsDir() {
-		src = src + "\\article.md"
+		src = src + "\\" + filepath.Base(src) + ".md"
 	}
 	// _, articleInfo.MetaData = _decode_article(src)
 	articleInfo.Src = src

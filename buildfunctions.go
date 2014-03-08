@@ -163,14 +163,14 @@ func build_album(logPage LogPage, tplDirPath string, destLogDir string, onlyRebu
 func build_article(logPage LogPage, tplDirPath string, destLogDir string, onlyRebuildHtml bool) {
 	destArticleDir := destLogDir
 	if !onlyRebuildHtml {
-		if filepath.Base(logPage.LogInfo.Src) == "article.md" {
+		if strings.HasPrefix(filepath.Base(logPage.LogInfo.Src), filepath.Base(filepath.Dir(logPage.LogInfo.Src))) {
 			srcArticleDir := filepath.Dir(logPage.LogInfo.Src)
 			CopyDir(srcArticleDir, destArticleDir)
 		} else {
 			if _, err := os.Stat(destArticleDir); os.IsNotExist(err) {
 				os.Mkdir(destArticleDir, os.ModePerm)
 			}
-			CopyFile(logPage.LogInfo.Src, destArticleDir+"\\article.md")
+			CopyFile(logPage.LogInfo.Src, destArticleDir+"\\"+filepath.Base(logPage.LogInfo.Src)+".md")
 		}
 	}
 	content := _decode_article(logPage.LogInfo.Src)
