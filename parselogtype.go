@@ -20,13 +20,13 @@ func Parse_logType(dir string) string {
 	fileList, _ := filepath.Glob(srcDir)
 
 	if len(fileList) == 0 {
-		return "unknow logtype"
+		return "empty directory"
 	} else if is_album(fileList) {
 		return "album"
 	} else if is_article(fileList) {
 		return "article"
 	} else {
-		return "unknow logtype"
+		return "category"
 	}
 
 }

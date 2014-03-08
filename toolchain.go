@@ -93,7 +93,7 @@ func ImgResize(sitePath string) {
 	for _, path := range fileList {
 		if Parse_logType(path) == "album" {
 			var siteInfo SiteInfo
-			logInfo := Decode_log(path, siteInfo)
+			logInfo := Decode_log(path, "album", siteInfo)
 			os.RemoveAll(sitePath + "\\complied\\posts\\" + logInfo.Permalink)
 		}
 	}
@@ -191,7 +191,7 @@ func SiteRoot(siteRoot string) string {
 	}
 }
 
-func Post(sitePath string, title string, logType string, categorys string, tags string) {
+/*func Post(sitePath string, title string, logType string, categorys string, tags string) {
 	var meta_categorysArry []string
 	var meta_tagsArry []string
 	var meta_categorys string
@@ -260,47 +260,47 @@ func Post(sitePath string, title string, logType string, categorys string, tags 
 	} else {
 		ioutil.WriteFile(logPath+"\\meta", []byte(metadata), os.ModePerm)
 	}
-}
+}*/
 
 func QuickPost(sitePath string, logType string, title string) {
-	var metadata string
-	siteCfg := Configure(sitePath + "\\complied\\setting")
-	siteCategroys := GetCategorys(siteCfg.GetArray("categorys"))
-	siteTags := GetTags(siteCfg.GetArray("tags"))
-	var meta_siteCategroys, meta_siteTags string
-	for _, category := range siteCategroys {
-		if meta_siteCategroys != "" {
-			meta_siteCategroys += ","
-		}
-		meta_siteCategroys += category.Name
-	}
-	for _, tag := range siteTags {
-		if meta_siteTags != "" {
-			meta_siteTags += ","
-		}
-		meta_siteTags += tag.Name
-	}
+	/*	var metadata string
+		siteCfg := Configure(sitePath + "\\complied\\setting")
+			siteCategroys := GetCategorys(siteCfg.GetArray("categorys"))
+			siteTags := GetTags(siteCfg.GetArray("tags"))
+			var meta_siteCategroys, meta_siteTags string
+			for _, category := range siteCategroys {
+				if meta_siteCategroys != "" {
+					meta_siteCategroys += ","
+				}
+				meta_siteCategroys += category.Name
+			}
+			for _, tag := range siteTags {
+				if meta_siteTags != "" {
+					meta_siteTags += ","
+				}
+				meta_siteTags += tag.Name
+			}
 
-	if len(meta_siteCategroys) > 0 {
-		metadata += "category:" + meta_siteCategroys + "\n"
-	}
-	if len(meta_siteTags) > 0 {
-		metadata += "tag:" + meta_siteTags + "\n"
-	}
-	if len(metadata) > 0 {
-		metadata = "---\n" + metadata + "---\n"
-	}
+			if len(meta_siteCategroys) > 0 {
+				metadata += "category:" + meta_siteCategroys + "\n"
+			}
+			if len(meta_siteTags) > 0 {
+				metadata += "tag:" + meta_siteTags + "\n"
+			}
+			if len(metadata) > 0 {
+				metadata = "---\n" + metadata + "---\n"
+			}*/
 	if logType == "album" || logType == "_album" {
 		logPath := sitePath + "\\" + title + "@" + time.Now().Format("2006-1-2")
 		err := os.Mkdir(logPath, os.ModePerm)
 		if err == nil {
-			file := logPath + "\\meta"
-			err = ioutil.WriteFile(file, []byte(metadata), os.ModePerm)
-			if err != nil {
-				log.Fatal(logPath + "写入元数据失败")
-			}
+			/*			file := logPath + "\\meta"
+						err = ioutil.WriteFile(file, []byte(metadata), os.ModePerm)
+						if err != nil {
+							log.Fatal(logPath + "写入元数据失败")
+						}*/
 			if logType == "album" {
-				args := strings.Fields(file)
+				args := strings.Fields(logPath)
 				args[0] = "/select," + args[0]
 				cmd := exec.Command("explorer.exe", args...)
 				cmd.Run()
@@ -310,7 +310,7 @@ func QuickPost(sitePath string, logType string, title string) {
 		}
 	} else if logType == "article" || logType == "_article" {
 		logPath := sitePath + "\\" + title + "@" + time.Now().Format("2006-1-2") + ".md"
-		err := ioutil.WriteFile(logPath, []byte(metadata), os.ModePerm)
+		err := ioutil.WriteFile(logPath, []byte(""), os.ModePerm)
 		if err != nil {
 			log.Fatal(logPath + "写入元数据失败")
 		}
@@ -325,7 +325,7 @@ func QuickPost(sitePath string, logType string, title string) {
 		err := os.Mkdir(logPath, os.ModePerm)
 		if err == nil {
 			file := logPath + "\\article.md"
-			err = ioutil.WriteFile(file, []byte(metadata), os.ModePerm)
+			err = ioutil.WriteFile(file, []byte(""), os.ModePerm)
 			if err != nil {
 				log.Fatal(logPath + "写入元数据失败")
 			}

@@ -17,16 +17,14 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
+	// "regexp"
 	"strings"
 	"syscall"
 	"time"
 )
 
 //解析日志信息
-func Decode_log(src string, siteInfo SiteInfo) LogInfo { //decode_log
-
-	logType := Parse_logType(src)
+func Decode_log(src string, logType string, siteInfo SiteInfo) LogInfo { //decode_log
 
 	var logInfo LogInfo
 
@@ -61,22 +59,22 @@ func Decode_log(src string, siteInfo SiteInfo) LogInfo { //decode_log
 		log.Fatal(fileName + "日志文件名不合法，请修改后再build")
 	}
 
-	if logInfo.MetaData["alias"] == "" {
-		logInfo.Permalink = url.QueryEscape(pinyin.Convert(logInfo.Title, "-"))
-	} else {
-		logInfo.Permalink = logInfo.MetaData["alias"]
-	}
-
-	for _, category := range siteInfo.Categorys {
-		if strings.Contains(logInfo.MetaData["category"], category.Name) {
-			logInfo.Categorys = append(logInfo.Categorys, category)
-		}
-	}
-	for _, tag := range siteInfo.Tags {
+	//if logInfo.MetaData["alias"] == "" {
+	logInfo.Permalink = url.QueryEscape(pinyin.Convert(logInfo.Title, "-"))
+	//} else {
+	//	logInfo.Permalink = logInfo.MetaData["alias"]
+	//}
+	/*
+		for _, category := range siteInfo.Categorys {
+			if strings.Contains(logInfo.MetaData["category"], category.Name) {
+				logInfo.Categorys = append(logInfo.Categorys, category)
+			}
+		}*/
+	/*	for _, tag := range siteInfo.Tags {
 		if strings.Contains(logInfo.MetaData["tag"], tag.Name) {
 			logInfo.Tags = append(logInfo.Tags, tag)
 		}
-	}
+	}*/
 	return logInfo
 }
 
@@ -93,7 +91,7 @@ func decode_article(src string) LogInfo {
 	if fileInfo.IsDir() {
 		src = src + "\\article.md"
 	}
-	_, articleInfo.MetaData = _decode_article(src)
+	// _, articleInfo.MetaData = _decode_article(src)
 	articleInfo.Src = src
 	articleInfo.Type = "article"
 	return articleInfo
@@ -105,10 +103,10 @@ func decode_album(src string) LogInfo {
 	albumInfo.LastModTime = TimeStamp(getLastModTime(fileInfo))
 
 	//获取元数据
-	file, err := ioutil.ReadFile(src + "\\meta")
-	if err == nil {
-		albumInfo.MetaData, _ = decode_meta(string(file))
-	}
+	/*	file, err := ioutil.ReadFile(src + "\\meta")
+		if err == nil {
+			albumInfo.MetaData, _ = decode_meta(string(file))
+		}*/
 	_, summary := _decode_album(src)
 	if len(summary) > 0 {
 		albumInfo.Summary = summary
@@ -209,17 +207,18 @@ func _decode_album(src string) (Album, Album) {
 	return album, albumSummary
 }
 
-func _decode_article(src string) (Article, map[string]string) {
+func _decode_article(src string) Article /*, map[string]string*/ {
 	//获取元数据
 	fi, err := ioutil.ReadFile(src)
 	if err != nil {
 		panic(err)
 	}
-	metaData, content := decode_meta(string(fi))
-	return Article(content), metaData
+	// metaData, content := decode_meta(string(fi))
+	// metaData, content := decode_meta(string(fi))
+	return Article(fi) /*, metaData*/
 }
 
-func decode_meta(content string) (map[string]string, string) {
+/*func decode_meta(content string) (map[string]string, string) {
 	// re := regexp.MustCompile("-{3,}([\\S\\s]*?)-{3,}")
 	metaDataMap := map[string]string{}
 	re := regexp.MustCompile("^(\\s*)-{3,}([\\S\\s]*?)-{3,}")
@@ -241,3 +240,4 @@ func decode_meta(content string) (map[string]string, string) {
 
 	return metaDataMap, content
 }
+*/

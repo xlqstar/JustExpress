@@ -22,7 +22,7 @@ func Build(siteDirPath string, onlyRebuildHtml bool) {
 	var themeDirPath = compliedDirPath + "\\style"
 	var postDirPath = compliedDirPath + "\\posts"
 	var archiveDirPath = compliedDirPath + "\\archives"
-	var tagDirPath = compliedDirPath + "\\tags"
+	// var tagDirPath = compliedDirPath + "\\tags"
 	// var indexDirPath = compliedDirPath
 	siteCfg := Configure(compliedDirPath + "\\setting")
 	themeCfg := Configure(themeDirPath + "\\meta")
@@ -32,7 +32,7 @@ func Build(siteDirPath string, onlyRebuildHtml bool) {
 	siteInfo.Author = siteCfg.GetStr("author")
 	siteInfo.PageSize = siteCfg.GetInt("pageSize")
 	siteInfo.Categorys = GetCategorys(siteCfg.GetArray("categorys"))
-	siteInfo.Tags = GetTags(siteCfg.GetArray("tags"))
+	// siteInfo.Tags = GetTags(siteCfg.GetArray("tags"))
 	siteInfo.Links = GetLinks(siteCfg.GetArray("links"))
 	siteInfo.Socials = GetSocials(siteCfg.GetArray("socials"))
 
@@ -50,16 +50,55 @@ func Build(siteDirPath string, onlyRebuildHtml bool) {
 	logDirList, _ := filepath.Glob(siteDirPath + "\\*")
 	os.Mkdir(postDirPath, os.ModePerm)
 	for k := range logDirList {
+
 		if filepath.Base(logDirList[k]) == "complied" {
 			continue
 		}
-		logInfo := Decode_log(logDirList[k], siteInfo)
 
-		if logList.Contain(logInfo.Permalink) {
-			log.Fatal("《" + logInfo.Title + "》文章转拼音后跟其他文章冲突,请指定alias别名")
+		logType := Parse_logType(logDirList[k])
+
+		if logType == "category" {
+
+			var category Category
+			for _, thisCategory := range siteInfo.Categorys {
+				categoryFileName := filepath.Base(logDirList[k])
+				if categoryFileName == thisCategory.Name || categoryFileName == thisCategory.Alias {
+					category = thisCategory
+					break
+				}
+			}
+
+			// siteInfo.Categorys = append(siteInfo.Categorys, category)
+			categoryLogDirList, _ := filepath.Glob(logDirList[k] + "\\*")
+
+			for j := range categoryLogDirList {
+
+				logType := Parse_logType(categoryLogDirList[j])
+				logInfo := Decode_log(categoryLogDirList[j], logType, siteInfo)
+				logInfo.Category = category
+
+				if logList.Contain(logInfo.Permalink) {
+
+					log.Fatal("《" + logInfo.Title + "》文章转拼音后跟其他文章冲突,请指定alias别名")
+
+				}
+
+				logList = append(logList, logInfo)
+			}
+
+		} else {
+
+			logInfo := Decode_log(logDirList[k], logType, siteInfo)
+
+			if logList.Contain(logInfo.Permalink) {
+
+				log.Fatal("《" + logInfo.Title + "》文章转拼音后跟其他文章冲突,请指定alias别名")
+
+			}
+
+			logList = append(logList, logInfo)
+
 		}
-
-		logList = append(logList, logInfo)
 	}
 
 	//检查变动
@@ -77,7 +116,7 @@ func Build(siteDirPath string, onlyRebuildHtml bool) {
 		delete(buildedLogList, logInfo.Permalink)
 	}
 
-	var deletedLogList []map[string]string
+	var deletedLogList LogList
 	if len(buildedLogList) > 0 {
 		fi, _ := ioutil.ReadFile(compliedDirPath + "\\loglist.json")
 		var lastLogList []LogInfo
@@ -85,25 +124,11 @@ func Build(siteDirPath string, onlyRebuildHtml bool) {
 		for permalink := range buildedLogList {
 			for k := range lastLogList {
 				if lastLogList[k].Permalink == permalink {
-					deletedLogList = append(deletedLogList, lastLogList[k].MetaData)
+					deletedLogList = append(deletedLogList, lastLogList[k])
 					break
 				}
 			}
 		}
-
-		/*		if err != nil {
-				fmt.Println("error in translating,", err.Error())
-				return
-			}*/
-		/*		for buildedLogPermalink, _ := range buildedLogList {
-				fi, err := ioutil.ReadFile(postDirPath + "\\" + buildedLogPermalink + "\\article.md")
-				if err != nil {
-					fi, err = ioutil.ReadFile(postDirPath + "\\" + buildedLogPermalink + "\\meta")
-				}
-				metaData, _ := decode_meta(string(fi))
-				deletedLogList = append(deletedLogList, metaData)
-			}*/
-
 	}
 
 	//同步主题
@@ -123,19 +148,20 @@ func Build(siteDirPath string, onlyRebuildHtml bool) {
 	//=======================统计===========================
 
 	//统计tag数据
-	for k := range siteInfo.Tags {
+	/*	for k := range siteInfo.Tags {
 		for kk := range logList {
 			if strings.Contains(logList[kk].MetaData["tag"], siteInfo.Tags[k].Name) {
 				siteInfo.Tags[k].Count += 1
 			}
 		}
-	}
+	}*/
 
 	//统计category数据
 	for k := range siteInfo.Categorys {
 		//统计每个分类底下的日志个数
 		for kk := range logList {
-			if strings.Contains(logList[kk].MetaData["category"], siteInfo.Categorys[k].Name) || logList[kk].Type == siteInfo.Categorys[k].Alias {
+			// if strings.Contains(logList[kk].MetaData["category"], siteInfo.Categorys[k].Name) || logList[kk].Type == siteInfo.Categorys[k].Alias {
+			if logList[kk].Category.Name == siteInfo.Categorys[k].Name || logList[kk].Type == siteInfo.Categorys[k].Alias {
 				siteInfo.Categorys[k].Count += 1
 			}
 		}
@@ -201,6 +227,9 @@ func Build(siteDirPath string, onlyRebuildHtml bool) {
 
 	//按分类生成索引
 	for _, category := range siteInfo.Categorys {
+		if category.Alias == "." {
+			continue
+		}
 		haveUpdated := false
 		_logList := LogList{}
 		categoryDirPath := compliedDirPath + "\\" + category.Alias
@@ -210,8 +239,8 @@ func Build(siteDirPath string, onlyRebuildHtml bool) {
 		}
 
 		if !haveUpdated && len(deletedLogList) > 0 {
-			for _, logMeta := range deletedLogList {
-				if strings.Contains(logMeta["category"], category.Name) {
+			for _, logInfo := range deletedLogList {
+				if logInfo.Category.Name == category.Name {
 					haveUpdated = true
 					break
 				}
@@ -228,7 +257,7 @@ func Build(siteDirPath string, onlyRebuildHtml bool) {
 		} else if category.Count > 0 {
 			//剔出该分类下的日志列表
 			for _, logInfo := range logList {
-				if strings.Contains(logInfo.MetaData["category"], category.Name) || logInfo.Type == category.Alias {
+				if logInfo.Category.Name == category.Name || logInfo.Type == category.Alias {
 					_logList = append(_logList, logInfo)
 				}
 			}
@@ -259,66 +288,68 @@ func Build(siteDirPath string, onlyRebuildHtml bool) {
 	}
 
 	//标签页生成============================
-	os.Mkdir(tagDirPath, os.ModePerm)
+	/*
+		os.Mkdir(tagDirPath, os.ModePerm)
 
-	tagPage := TagPage{SiteInfo: siteInfo, RelPath: "../"}
-	//按标签生成索引
-	for _, tag := range siteInfo.Tags {
-		haveUpdated := false
-		_logList := LogList{}
-		tagPagePath := tagDirPath + "\\" + tag.Alias + ".html"
+		tagPage := TagPage{SiteInfo: siteInfo, RelPath: "../"}
+		//按标签生成索引
+		for _, tag := range siteInfo.Tags {
+			haveUpdated := false
+			_logList := LogList{}
+			tagPagePath := tagDirPath + "\\" + tag.Alias + ".html"
 
-		if onlyRebuildHtml {
-			haveUpdated = true
-		}
+			if onlyRebuildHtml {
+				haveUpdated = true
+			}
 
-		if !haveUpdated && len(deletedLogList) > 0 {
-			for _, logMeta := range deletedLogList {
-				if strings.Contains(logMeta["tag"], tag.Name) {
-					haveUpdated = true
-					break
-				}
-			}
-		}
-		//如果没有日志关联到该分类下
-		if tag.Count == 0 {
-			if !haveUpdated {
-				if !Exist(tagPagePath) {
-					haveUpdated = true
-				}
-			}
-		} else if tag.Count > 0 {
-			//选出关联至该标签的日志列表
-			for _, logInfo := range logList {
-				//如果关联到该标签并且有修改或是新创建日志
-				if strings.Contains(logInfo.MetaData["tag"], tag.Name) {
-					_logList = append(_logList, logInfo)
-				}
-			}
-			if !haveUpdated {
-				//判断该分类下的日志是否有变动(添加日志或修改日志)
-				for _, logInfo := range _logList {
-					if In_array(logInfo.Title, updatedLogList) /* || !Exist(tagPagePath)*/ {
+			if !haveUpdated && len(deletedLogList) > 0 {
+				for _, logMeta := range deletedLogList {
+					if strings.Contains(logMeta["tag"], tag.Name) {
 						haveUpdated = true
 						break
 					}
 				}
 			}
-		} else {
-			continue
+			//如果没有日志关联到该分类下
+			if tag.Count == 0 {
+				if !haveUpdated {
+					if !Exist(tagPagePath) {
+						haveUpdated = true
+					}
+				}
+			} else if tag.Count > 0 {
+				//选出关联至该标签的日志列表
+				for _, logInfo := range logList {
+					//如果关联到该标签并且有修改或是新创建日志
+					if strings.Contains(logInfo.MetaData["tag"], tag.Name) {
+						_logList = append(_logList, logInfo)
+					}
+				}
+				if !haveUpdated {
+					//判断该分类下的日志是否有变动(添加日志或修改日志)
+					for _, logInfo := range _logList {
+						if In_array(logInfo.Title, updatedLogList)  {
+							haveUpdated = true
+							break
+						}
+					}
+				}
+			} else {
+				continue
+			}
+
+			tagPage.LogList = _logList
+			tagPage.Tag = tag
+
+			if haveUpdated {
+				Build_tagpage(tagPage, themeDirPath, tagDirPath)
+			} else {
+				//TODO
+				update_tag(tagDirPath+"\\"+tag.Alias+".html", "../")
+			}
+
 		}
-
-		tagPage.LogList = _logList
-		tagPage.Tag = tag
-
-		if haveUpdated {
-			Build_tagpage(tagPage, themeDirPath, tagDirPath)
-		} else {
-			//TODO
-			update_tag(tagDirPath+"\\"+tag.Alias+".html", "../")
-		}
-
-	}
+	*/
 
 	//归档生成============================
 	os.Mkdir(archiveDirPath, os.ModePerm)

@@ -72,8 +72,13 @@ func build_index_page(indexPage IndexPage, tplDirPath string, destDirPath string
 	for k, v := range indexPage.LogList {
 
 		if v.Type == "article" {
-			content, _ := _decode_article(v.Src)
-			content_str := strings.Replace(string(content), "]: ./", "]: ./posts/"+v.Permalink+"/", -1)
+			content := _decode_article(v.Src)
+			content_str := string(content)
+			if indexPage.Category.Name == "首页" || indexPage.Category.Name == "index" {
+				content_str = strings.Replace(content_str, "]: ./", "]: ./posts/"+v.Permalink+"/", -1)
+			} else {
+				content_str = strings.Replace(content_str, "]: ./", "]: ../posts/"+v.Permalink+"/", -1)
+			}
 			indexPage.LogList[k].Summary = MarkdownToHtml(content_str, true)
 		}
 
@@ -168,16 +173,16 @@ func build_article(logPage LogPage, tplDirPath string, destLogDir string, onlyRe
 			CopyFile(logPage.LogInfo.Src, destArticleDir+"\\article.md")
 		}
 	}
-	content, _ := _decode_article(logPage.LogInfo.Src)
+	content := _decode_article(logPage.LogInfo.Src)
 	logPage.LogInfo.Log = MarkdownToHtml(string(content), false)
 	makeHTML(&logPage, destArticleDir+"\\index.html", tplDirPath+"\\article.html")
 }
 
-func Build_tagpage(tagPage TagPage, tplDirPath string, destTagDir string) {
+/*func Build_tagpage(tagPage TagPage, tplDirPath string, destTagDir string) {
 	makeHTML(&tagPage, destTagDir+"\\"+tagPage.Tag.Alias+".html", tplDirPath+"\\tag.html")
 	log.Println(ConvertPath(destTagDir+"\\"+tagPage.Tag.Alias+".html") + " 标签页生成")
 }
-
+*/
 func Build_archive(archivePage ArchivePage, tplDirPath string, destArchiveDir string) {
 	makeHTML(&archivePage, destArchiveDir+"\\index.html", tplDirPath+"\\archive.html")
 	log.Println(ConvertPath(destArchiveDir+"\\index.html") + " 归档页生成")

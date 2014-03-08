@@ -69,6 +69,13 @@ func Exist(filename string) bool {
 	return err == nil || os.IsExist(err)
 }
 
+// 检查目标是目录还是文件
+// 如果由 filename 指定的文件或目录存在则返回 true，否则返回 false
+func IsDir(filename string) bool {
+	fi, err := os.Stat(filename)
+	return err != nil || fi.IsDir()
+}
+
 func Remkdir(dirPath string) {
 	os.RemoveAll(dirPath)
 	err := os.Mkdir(dirPath, os.ModePerm)

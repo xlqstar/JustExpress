@@ -64,27 +64,8 @@ func GetCategorys(categorys []string) []Category {
 	var categorysSet []Category
 
 	for _, categoryStr := range categorys {
-		categoryArry := strings.Split(strings.TrimSpace(categoryStr), "@")
-		var category Category
-		name := strings.Split(strings.TrimSpace(categoryArry[0]), "(")
-		category.Name = strings.TrimSpace(name[0])
-		if len(name) > 2 {
-			log.Fatal(categoryStr + "配置格式有误(多个()符号)，请检查确认！")
-		} else if len(name) > 1 {
-			category.Alias = url.QueryEscape(pinyin.Convert(strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(name[1]), ")")), ""))
-		} else {
-			category.Alias = url.QueryEscape(pinyin.Convert(category.Name, ""))
-		}
-		if len(categoryArry) > 2 {
-			log.Fatal(categoryStr + "配置格式有误(多个@符号)，请检查确认")
-		} else if len(categoryArry) > 1 {
-			category.Href = strings.TrimSpace(categoryArry[1])
-		}
-		if len(category.Href) > 0 {
-			category.Count = -1
-		} else {
-			category.Count = 0
-		}
+
+		category := GetCategory(categoryStr)
 
 		categorysSet = append(categorysSet, category)
 	}
@@ -92,6 +73,45 @@ func GetCategorys(categorys []string) []Category {
 	return categorysSet
 }
 
+func GetCategory(categoryStr string) Category {
+
+	var category Category
+	var nameArry []string
+	nameArry = strings.Split(strings.TrimSpace(categoryStr), "@")
+	if len(nameArry) > 2 {
+		log.Fatal(categoryStr + "配置格式有误(多个@符号)，请检查确认")
+	} else if len(nameArry) > 1 {
+		category.Href = strings.TrimSpace(nameArry[1])
+	}
+
+	nameArry = strings.Split(strings.TrimSpace(categoryStr), "(")
+	category.Name = strings.TrimSpace(nameArry[0])
+	if len(nameArry) > 2 {
+		log.Fatal(categoryStr + "配置格式有误(多个()符号)，请检查确认！")
+	} else if len(nameArry) > 1 {
+		category.Alias = url.QueryEscape(pinyin.Convert(strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(nameArry[1]), ")")), ""))
+	} else if category.Name == "首页" || category.Name == "index" {
+		category.Alias = "."
+	} else if category.Name == "文章" || category.Name == "article" {
+		category.Alias = "article"
+	} else if category.Name == "相册" || category.Name == "album" {
+		category.Alias = "album"
+	} else if category.Name == "归档" || category.Name == "archive" {
+		category.Alias = "archives"
+	} else {
+		category.Alias = url.QueryEscape(pinyin.Convert(category.Name, ""))
+	}
+
+	if len(category.Href) > 0 {
+		category.Count = -1
+	} else {
+		category.Count = 0
+	}
+
+	return category
+}
+
+/*
 func GetTags(tags []string) []Tag {
 	var tagSet []Tag
 
@@ -112,7 +132,7 @@ func GetTags(tags []string) []Tag {
 
 	return tagSet
 }
-
+*/
 func GetLinks(links []string) []Link {
 	var linkSet []Link
 	for _, linkStr := range links {

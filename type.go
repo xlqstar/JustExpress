@@ -33,12 +33,12 @@ type Category struct {
 }
 
 //标签
-type Tag struct {
+/*type Tag struct {
 	Name  string
 	Alias string
 	Count int //关联到该标签的文章数
 }
-
+*/
 //友情链接
 type Link struct {
 	Name string
@@ -72,12 +72,13 @@ type ArchiveStatis struct {
 }*/
 
 type LogInfo struct {
-	Title       string
-	Date        TimeStamp
-	Tags        []Tag
-	Categorys   []Category
-	Permalink   string
-	MetaData    map[string]string
+	Title string
+	Date  TimeStamp
+	// Tags     []Tag
+	Category Category
+	// Categorys   []Category
+	Permalink string
+	// MetaData    map[string]string
 	Src         string
 	Type        string
 	LastModTime TimeStamp
@@ -92,12 +93,12 @@ type SiteInfo struct {
 	Domain    string
 	Categorys []Category
 	Links     []Link
-	Tags      []Tag
-	Archives  []Archive
-	Email     string
-	Author    string
-	Socials   map[string]string
-	PageSize  int
+	// Tags      []Tag
+	Archives []Archive
+	Email    string
+	Author   string
+	Socials  map[string]string
+	PageSize int
 
 	ImgWidth    int
 	BigImgWidth int
@@ -127,13 +128,14 @@ type LogPage struct {
 	PrevLog  LogInfo
 }
 
+/*
 type TagPage struct {
 	RelPath  string
 	SiteInfo SiteInfo
 	LogList  []LogInfo
 	Tag      Tag
 }
-
+*/
 type ArchivePage struct {
 	RelPath  string
 	SiteInfo SiteInfo
